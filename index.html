@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление на апартаменти</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>📊 Управление на апартаменти и плащания</h1>
+        <p>Система за счетоводство на жилищни комплекси</p>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📈 Начало</button>
+            <button class="tab-btn" onclick="switchTab('contracts')">📋 Договори</button>
+            <button class="tab-btn" onclick="switchTab('payments')">💳 Плащания</button>
+            <button class="tab-btn" onclick="switchTab('invoices')">🧾 Фактури</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ Настройки</button>
+        </div>
+
+        <div id="dashboard" class="tab-content active">
+            <h2>Обобщение по сгради</h2>
+            <div id="dashboardSummary" class="summary-grid"></div>
+            <div style="margin-top: 30px;">
+                <h2>Обща статистика</h2>
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="card">
+                        <div class="card-header">Всички договори</div>
+                        <div class="card-content">
+                            <div class="card-stat">
+                                <span class="stat-label">Брой:</span>
+                                <span class="stat-value" id="totalContracts">0</span>
+                            </div>
+                            <div class="card-stat">
+                                <span class="stat-label">Обща стойност:</span>
+                                <span class="stat-value" id="totalContractValue">0 лв.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Събрани плащания</div>
+                        <div class="card-content">
+                            <div class="card-stat">
+                                <span class="stat-label">Обща събрана сума:</span>
+                                <span class="stat-value positive" id="totalPaid">0 лв.</span>
+                            </div>
+                            <div class="card-stat">
+                                <span class="stat-label">Преостатък:</span>
+                                <span class="stat-value negative" id="totalRemaining">0 лв.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="contracts" class="tab-content">
+            <h2>Управление на договори</h2>
+            <button onclick="openContractModal()">➕ Нов договор</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Сграда</th>
+                        <th>Апартамент/Паркомясто</th>
+                        <th>Собственик</th>
+                        <th>Обща стойност</th>
+                        <th>Авансово плащане</th>
+                        <th>Доплащания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="contractsTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="payments" class="tab-content">
+            <h2>График на плащания</h2>
+            <button onclick="openPaymentModal()">➕ Ново плащане</button>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <div>
+                    <label>Филтър по сграда:</label>
+                    <select id="paymentFilterBuilding" onchange="filterPayments()">
+                        <option value="">Всички сгради</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Статус:</label>
+                    <select id="paymentFilterStatus" onchange="filterPayments()">
+                        <option value="">Всички</option>
+                        <option value="pending">Чакащи</option>
+                        <option value="paid">Платени</option>
+                    </select>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Собственик</th>
+                        <th>Апартамент</th>
+                        <th>Тип</th>
+                        <th>Сума</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="invoices" class="tab-content">
+            <h2>Фактури и проформи</h2>
+            <button onclick="openInvoiceModal()">➕ Нова фактура</button>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <div>
+                    <label>Тип:</label>
+                    <select id="invoiceFilterType" onchange="filterInvoices()">
+                        <option value="">Всички</option>
+                        <option value="proforma">Проформа</option>
+                        <option value="invoice">Фактура</option>
+                    </select>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Номер</th>
+                        <th>Дата</th>
+                        <th>Собственик</th>
+                        <th>Тип</th>
+                        <th>Сума</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="invoicesTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <h2>Настройки</h2>
+            
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">Инициализирай данни</h3>
+            <p style="margin-bottom: 15px;">Създай примерни данни за всички 5 сгради с апартаменти и паркоместа:</p>
+            <button onclick="initializeSampleData()">📦 Инициализирай примерни данни</button>
+
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">Експортиране и импортиране</h3>
+            <p style="margin-bottom: 10px; font-size: 13px; color: #666;">📊 <strong>Excel формат:</strong> Експортирай данните като Excel таблици</p>
+            <div class="form-row" style="margin-bottom: 15px;">
+                <button onclick="exportToExcel()">📥 Експортирай в Excel</button>
+                <button onclick="document.getElementById('importExcelFile').click()">📤 Импортирай от Excel</button>
+            </div>
+            <input type="file" id="importExcelFile" style="display: none;" accept=".csv" onchange="importFromExcel()">
+
+            <p style="margin-bottom: 10px; margin-top: 20px; font-size: 13px; color: #666;">🔄 <strong>Резервно копие:</strong> Запази всички данни като JSON</p>
+            <div class="form-row">
+                <button onclick="exportData()">💾 Резервно копие (JSON)</button>
+                <button onclick="document.getElementById('importFile').click()">↩️ Възстанови (JSON)</button>
+            </div>
+            <input type="file" id="importFile" style="display: none;" onchange="importData()">
+
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">Опасни действия</h3>
+            <button class="danger" onclick="if(confirm('Сигурен ли си? Това е необратимо!')) { localStorage.clear(); location.reload(); }">🗑️ Изтрий всички данни</button>
+        </div>
+    </div>
+
+    <div id="contractModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Нов договор</span>
+                <button class="close-btn" onclick="closeContractModal()">✕</button>
+            </div>
+            <form id="contractForm" onsubmit="saveContract(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Собственик:</label>
+                        <input type="text" id="contractOwner" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон:</label>
+                        <input type="tel" id="contractPhone">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Дата на договор:</label>
+                    <input type="date" id="contractDate" required>
+                </div>
+
+                <h4 style="margin-top: 30px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea; color: #667eea;">🏠 АПАРТАМЕНТ</h4>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Сграда:</label>
+                        <select id="apartmentBuilding" onchange="populateApartmentsSelect()">
+                            <option value="">Без апартамент</option>
+                            <option value="building_a">Сграда А</option>
+                            <option value="building_b">Сграда Б</option>
+                            <option value="building_c">Сграда В</option>
+                            <option value="building_d">Сграда Г</option>
+                            <option value="building_e">Сграда Д</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Апартамент:</label>
+                        <select id="apartmentUnit">
+                            <option value="">Изберете апартамент</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Стойност на апартамента:</label>
+                    <input type="number" id="apartmentValue" step="0.01" min="0">
+                </div>
+
+                <h4 style="margin-top: 30px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #764ba2; color: #764ba2;">🅿️ ПАРКОМЯСТО</h4>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Сграда:</label>
+                        <select id="parkingBuilding" onchange="populateParkingSelect()">
+                            <option value="">Без паркомясто</option>
+                            <option value="building_a">Сграда А</option>
+                            <option value="building_b">Сграда Б</option>
+                            <option value="building_c">Сграда В</option>
+                            <option value="building_d">Сграда Г</option>
+                            <option value="building_e">Сграда Д</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Паркомясто:</label>
+                        <select id="parkingUnit">
+                            <option value="">Изберете паркомясто</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Стойност на паркомяста:</label>
+                    <input type="number" id="parkingValue" step="0.01" min="0">
+                </div>
+
+                <h4 style="margin-top: 30px; margin-bottom: 10px;">📋 График на плащане</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Аванс (%):</label>
+                        <input type="number" id="advancePercent" value="30" min="0" max="100" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата на авансово плащане:</label>
+                        <input type="date" id="advanceDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>1-во доплащане (%):</label>
+                        <input type="number" id="installment1Percent" value="35" min="0" max="100" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата:</label>
+                        <input type="date" id="installment1Date" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>2-ро доплащане (%):</label>
+                        <input type="number" id="installment2Percent" value="35" min="0" max="100" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата:</label>
+                        <input type="date" id="installment2Date" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Бележки:</label>
+                    <textarea id="contractNotes" rows="3"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">💾 Запази договор</button>
+                    <button type="button" class="secondary" onclick="closeContractModal()">Отказ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Записване на плащане</span>
+                <button class="close-btn" onclick="closePaymentModal()">✕</button>
+            </div>
+            <form onsubmit="savePayment(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Договор:</label>
+                        <select id="paymentContract" required onchange="populatePaymentDetails()">
+                            <option value="">Изберете договор</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата на плащане:</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Сума:</label>
+                        <input type="number" id="paymentAmount" step="0.01" required min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Валута:</label>
+                        <select id="paymentCurrency" required>
+                            <option value="BGN">BGN (Български лев)</option>
+                            <option value="EUR">EUR (Евро)</option>
+                            <option value="USD">USD (Долар)</option>
+                            <option value="GBP">GBP (Британски паунд)</option>
+                            <option value="CHF">CHF (Швейцарски франк)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип плащане:</label>
+                        <select id="paymentType" required>
+                            <option value="">Изберете</option>
+                            <option value="advance">Аванс</option>
+                            <option value="installment1">1-во доплащане</option>
+                            <option value="installment2">2-ро доплащане</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Метод:</label>
+                        <select id="paymentMethod" required>
+                            <option value="">Изберете</option>
+                            <option value="cash">Брой</option>
+                            <option value="bank">Банков превод</option>
+                            <option value="check">Чек</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Бележки:</label>
+                    <textarea id="paymentNotes" rows="3"></textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit">💾 Запази плащане</button>
+                    <button type="button" class="secondary" onclick="closePaymentModal()">Отказ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="invoiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Нова фактура</span>
+                <button class="close-btn" onclick="closeInvoiceModal()">✕</button>
+            </div>
+            <form onsubmit="saveInvoice(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Договор:</label>
+                        <select id="invoiceContract" required>
+                            <option value="">Изберете договор</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Номер на фактура:</label>
+                        <input type="text" id="invoiceNumber" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата:</label>
+                        <input type="date" id="invoiceDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип:</label>
+                        <select id="invoiceType" required>
+                            <option value="">Изберете</option>
+                            <option value="proforma">Проформа</option>
+                            <option value="invoice">Фактура</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Сума (EUR):</label>
+                        <input type="number" id="invoiceAmount" step="0.01" required min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Описание:</label>
+                    <textarea id="invoiceDescription" rows="3"></textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit">💾 Запази фактура</button>
+                    <button type="button" class="secondary" onclick="closeInvoiceModal()">Отказ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
