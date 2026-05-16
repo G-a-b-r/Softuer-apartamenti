@@ -3,7 +3,9 @@ class AppData {
         this.contracts = this.loadData('contracts', []);
         this.payments = this.loadData('payments', []);
         this.invoices = this.loadData('invoices', []);
-        this.units = this.loadData('units', this.generateUnits());
+        
+        this.units = this.generateUnits();
+        this.saveData('units', this.units);
     }
 
     loadData(key, defaultValue) {
@@ -11,7 +13,7 @@ class AppData {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : defaultValue;
         } catch (e) {
-            console.error(`Error loading ${key}:`, e);
+            console.error('Error loading ' + key + ':', e);
             return defaultValue;
         }
     }
@@ -20,31 +22,49 @@ class AppData {
         try {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (e) {
-            console.error(`Error saving ${key}:`, e);
+            console.error('Error saving ' + key + ':', e);
         }
     }
 
     generateUnits() {
         const units = {};
         const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+        const building_a_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
+        const building_a_prices = [220165.00, 304411.00, 172375.00, 281024.00, 202404.00, 146365.00, 100261.00, 172826.00, 150536.00, 107414.00, 123794.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 123794.00, 162826.00, 181560.00, 160084.00, 155181.00, 110988.00, 127662.00, 173003.00, 192908.00, 170090.00, 159335.00, 113854.00, 130959.00, 172250.00, 192069.00, 169350.00];
+        const building_a_ids = [
+            '10135.5061.74.1.1', '10135.5061.74.1.2', '10135.5061.74.1.3', '10135.5061.74.1.4', '10135.5061.74.1.5',
+            '10135.5061.74.1.6', '10135.5061.74.1.7', '10135.5061.74.1.8', '10135.5061.74.1.9', '10135.5061.74.1.10',
+            '10135.5061.74.1.11', '10135.5061.74.1.12', '10135.5061.74.1.13', '10135.5061.74.1.14', '10135.5061.74.1.15',
+            '10135.5061.74.1.16', '10135.5061.74.1.17', '10135.5061.74.1.18', '10135.5061.74.1.19', '10135.5061.74.1.20',
+            '10135.5061.74.1.21', '10135.5061.74.1.22', '10135.5061.74.1.23', '10135.5061.74.1.24', '10135.5061.74.1.25',
+            '10135.5061.74.1.26', '10135.5061.74.1.27', '10135.5061.74.1.28', '10135.5061.74.1.29', '10135.5061.74.1.30',
+            '10135.5061.74.1.31', '10135.5061.74.1.32'
+        ];
         
-        buildings.forEach(building => {
+        for (let building of buildings) {
             units[building] = [];
-            for (let i = 1; i <= 35; i++) {
+            const apt_count = building === 'building_a' ? 32 : 35;
+            for (let i = 0; i < apt_count; i++) {
+                let size, price, apt_id;
+                if (building === 'building_a' && i < building_a_sizes.length) {
+                    size = building_a_sizes[i];
+                    price = building_a_prices[i];
+                    apt_id = building_a_ids[i];
+                } else {
+                    size = 50 + (i * 5) % 100;
+                    price = size * 850;
+                    apt_id = building + '_apt' + (i+1);
+                }
                 units[building].push({
-                    id: `${building}_apt${i}`,
-                    name: `Апартамент ${i}`,
-                    type: 'apartment'
+                    'id': apt_id,
+                    'name': 'Апартамент ' + (i+1),
+                    'type': 'apartment',
+                    'sqm': size,
+                    'price': price,
+                    'status': 'free'
                 });
             }
-            for (let i = 1; i <= 15; i++) {
-                units[building].push({
-                    id: `${building}_park${i}`,
-                    name: `Паркомясто ${i}`,
-                    type: 'parking'
-                });
-            }
-        });
+        }
         
         return units;
     }
@@ -54,14 +74,6 @@ class AppData {
         this.contracts.push(contract);
         this.saveData('contracts', this.contracts);
         return contract;
-    }
-
-    updateContract(id, contract) {
-        const index = this.contracts.findIndex(c => c.id === id);
-        if (index !== -1) {
-            this.contracts[index] = { ...this.contracts[index], ...contract };
-            this.saveData('contracts', this.contracts);
-        }
     }
 
     deleteContract(id) {
@@ -76,6 +88,11 @@ class AppData {
         return payment;
     }
 
+    deletePayment(id) {
+        this.payments = this.payments.filter(p => p.id !== id);
+        this.saveData('payments', this.payments);
+    }
+
     addInvoice(invoice) {
         invoice.id = 'invoice_' + Date.now();
         this.invoices.push(invoice);
@@ -83,18 +100,19 @@ class AppData {
         return invoice;
     }
 
+    deleteInvoice(id) {
+        this.invoices = this.invoices.filter(i => i.id !== id);
+        this.saveData('invoices', this.invoices);
+    }
+
     getContractsByBuilding(building) {
         return this.contracts.filter(c => 
-            (c.apartment?.building === building) || (c.parking?.building === building)
+            (c.apartment && c.apartment.building === building) || (c.parking && c.parking.building === building)
         );
     }
 
     getPaymentsByContract(contractId) {
         return this.payments.filter(p => p.contractId === contractId);
-    }
-
-    getInvoicesByContract(contractId) {
-        return this.invoices.filter(i => i.contractId === contractId);
     }
 
     getStats() {
@@ -109,9 +127,10 @@ class AppData {
                 return sum + payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
             }, 0);
             
+            const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
+            
             stats[building] = {
-                totalUnits: 35,
-                totalParking: 15,
+                totalUnits: totalUnits,
                 contractCount: buildingContracts.length,
                 totalValue: totalValue,
                 totalPaid: totalPaid,
@@ -125,6 +144,13 @@ class AppData {
 
 let appData = new AppData();
 const buildingNames = { 'building_a': 'Сграда А', 'building_b': 'Сграда Б', 'building_c': 'Сграда В', 'building_d': 'Сграда Г', 'building_e': 'Сграда Д' };
+
+function formatPrice(price) {
+    let str = price.toFixed(2);
+    let parts = str.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return parts.join(',');
+}
 
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -149,11 +175,11 @@ function updateDashboard() {
 
     for (let [building, stat] of Object.entries(stats)) {
         html += `
-            <div class="summary-card">
+            <div class="summary-card clickable" onclick="openBuildingDetail('${building}')">
                 <h3>${buildingNames[building]}</h3>
                 <div class="summary-item">
-                    <span class="summary-label">Апартаменти и паркоместа:</span>
-                    <span class="summary-value">${stat.totalUnits + stat.totalParking}</span>
+                    <span class="summary-label">Апартаменти:</span>
+                    <span class="summary-value">${stat.totalUnits}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Активни договори:</span>
@@ -161,16 +187,17 @@ function updateDashboard() {
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Обща стойност:</span>
-                    <span class="summary-value">${stat.totalValue.toFixed(2)} EUR</span>
+                    <span class="summary-value">${formatPrice(stat.totalValue)}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Събрано:</span>
-                    <span class="summary-value positive">${stat.totalPaid.toFixed(2)} EUR</span>
+                    <span class="summary-value positive">${formatPrice(stat.totalPaid)}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Преостатък:</span>
-                    <span class="summary-value negative">${stat.remaining.toFixed(2)} EUR</span>
+                    <span class="summary-value negative">${formatPrice(stat.remaining)}</span>
                 </div>
+                <div class="view-more">Виж всички имоти →</div>
             </div>
         `;
     }
@@ -183,9 +210,69 @@ function updateDashboard() {
     const remaining = totalValue - totalPaid;
 
     document.getElementById('totalContracts').textContent = totalContracts;
-    document.getElementById('totalContractValue').textContent = totalValue.toFixed(2) + ' EUR';
-    document.getElementById('totalPaid').textContent = totalPaid.toFixed(2) + ' EUR';
-    document.getElementById('totalRemaining').textContent = remaining.toFixed(2) + ' EUR';
+    document.getElementById('totalContractValue').textContent = formatPrice(totalValue);
+    document.getElementById('totalPaid').textContent = formatPrice(totalPaid);
+    document.getElementById('totalRemaining').textContent = formatPrice(remaining);
+}
+
+function openBuildingDetail(building) {
+    document.getElementById('apartmentsModalTitle').textContent = buildingNames[building];
+    const units = appData.units[building] || [];
+    
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Апартамент</th>
+                    <th>Квадратура (м²)</th>
+                    <th>Цена</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    units.forEach((unit, index) => {
+        const status = unit.status || 'free';
+        const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
+        const statusOptions = `
+            <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${index}, this.value)">
+                <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
+                <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
+                <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
+            </select>
+        `;
+        
+        html += `
+            <tr>
+                <td data-label="ID">${unit.id}</td>
+                <td data-label="Апартамент">${unit.name}</td>
+                <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
+                <td data-label="Статус">${statusOptions}</td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('apartmentsList').innerHTML = html;
+    document.getElementById('apartmentsModal').classList.add('active');
+}
+
+function updateUnitStatus(building, index, status) {
+    if (!appData.units[building][index]) return;
+    appData.units[building][index].status = status;
+    appData.saveData('units', appData.units);
+    
+    const select = document.querySelectorAll('#apartmentsList tr')[index].querySelector('.status-select');
+    if (select) {
+        select.className = 'status-select ' + (status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available');
+    }
+}
+
+function closeApartmentsModal() {
+    document.getElementById('apartmentsModal').classList.remove('active');
 }
 
 function openContractModal() {
@@ -206,33 +293,16 @@ function populateApartmentsSelect() {
     select.innerHTML = '<option value="">Изберете апартамент</option>';
     if (!building) return;
     
-    const apartments = appData.units[building]?.filter(u => u.type === 'apartment') || [];
+    const apartments = appData.units[building] ? appData.units[building].filter(u => u.type === 'apartment') : [];
     apartments.forEach(unit => {
-        select.innerHTML += `<option value="${unit.id}">${unit.name}</option>`;
-    });
-}
-
-function populateParkingSelect() {
-    const building = document.getElementById('parkingBuilding').value;
-    const select = document.getElementById('parkingUnit');
-    select.innerHTML = '<option value="">Изберете паркомясто</option>';
-    if (!building) return;
-    
-    const parking = appData.units[building]?.filter(u => u.type === 'parking') || [];
-    parking.forEach(unit => {
-        select.innerHTML += `<option value="${unit.id}">${unit.name}</option>`;
+        select.innerHTML += '<option value="' + unit.id + '">' + unit.name + '</option>';
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     const apartmentBuildingSelect = document.getElementById('apartmentBuilding');
-    const parkingBuildingSelect = document.getElementById('parkingBuilding');
-    
     if (apartmentBuildingSelect) {
         apartmentBuildingSelect.addEventListener('change', populateApartmentsSelect);
-    }
-    if (parkingBuildingSelect) {
-        parkingBuildingSelect.addEventListener('change', populateParkingSelect);
     }
 });
 
@@ -240,11 +310,10 @@ function saveContract(event) {
     event.preventDefault();
     
     const apartmentValue = parseFloat(document.getElementById('apartmentValue').value || 0);
-    const parkingValue = parseFloat(document.getElementById('parkingValue').value || 0);
-    const totalValue = apartmentValue + parkingValue;
+    const totalValue = apartmentValue;
     
     if (totalValue === 0) {
-        alert('⚠️ Моля, въведи поне стойност на апартамент или паркомясто!');
+        alert('⚠️ Моля, въведи стойност на апартамент!');
         return;
     }
     
@@ -256,11 +325,6 @@ function saveContract(event) {
             building: document.getElementById('apartmentBuilding').value,
             unit: document.getElementById('apartmentUnit').value,
             value: apartmentValue
-        },
-        parking: {
-            building: document.getElementById('parkingBuilding').value,
-            unit: document.getElementById('parkingUnit').value,
-            value: parkingValue
         },
         totalValue: totalValue,
         advance: {
@@ -292,31 +356,25 @@ function renderContracts() {
         let unitInfo = '';
         let building = '';
         
-        if (contract.apartment?.unit) {
-            const apartmentUnit = appData.units[contract.apartment.building]?.find(u => u.id === contract.apartment.unit);
+        if (contract.apartment && contract.apartment.unit) {
+            const apartmentUnit = appData.units[contract.apartment.building] ? appData.units[contract.apartment.building].find(u => u.id === contract.apartment.unit) : null;
             unitInfo += apartmentUnit ? apartmentUnit.name : '';
             building = buildingNames[contract.apartment.building];
-        }
-        if (contract.parking?.unit) {
-            const parkingUnit = appData.units[contract.parking.building]?.find(u => u.id === contract.parking.unit);
-            if (unitInfo) unitInfo += ' + ';
-            unitInfo += parkingUnit ? parkingUnit.name : '';
-            if (!building) building = buildingNames[contract.parking.building];
         }
         if (!unitInfo) unitInfo = 'Освоено';
         if (!building) building = 'Н/О';
         
         html += `
             <tr>
-                <td>${building}</td>
-                <td>${unitInfo}</td>
-                <td>${contract.owner}</td>
-                <td>${contract.totalValue.toFixed(2)} EUR</td>
-                <td>${contract.advance.percent}% (${new Date(contract.advance.date).toLocaleDateString('bg-BG')})</td>
-                <td>${contract.installment1.percent}% + ${contract.installment2.percent}%</td>
-                <td>
-                    <button class="secondary" onclick="editContract('${contract.id}')">✏️ Редакция</button>
-                    <button class="danger" onclick="if(confirm('Сигурен ли си?')) deleteContractItem('${contract.id}')">🗑️ Изтрий</button>
+                <td data-label="Сграда">${building}</td>
+                <td data-label="Имот">${unitInfo}</td>
+                <td data-label="Собственик">${contract.owner}</td>
+                <td data-label="Стойност">${formatPrice(parseFloat(contract.totalValue || 0))}</td>
+                <td data-label="Аванс">${contract.advance ? contract.advance.percent : 0}% (${new Date(contract.advance ? contract.advance.date : new Date()).toLocaleDateString('bg-BG')})</td>
+                <td data-label="Доплащания">${contract.installment1 ? contract.installment1.percent : 0}% + ${contract.installment2 ? contract.installment2.percent : 0}%</td>
+                <td data-label="Действия">
+                    <button class="secondary small" onclick="editContract('${contract.id}')">✏️</button>
+                    <button class="danger small" onclick="if(confirm('Сигурен ли си?')) deleteContractItem('${contract.id}')">🗑️</button>
                 </td>
             </tr>
         `;
@@ -346,10 +404,10 @@ function populatePaymentSelects() {
     select.innerHTML = '<option value="">Изберете договор</option>';
     
     appData.contracts.forEach(contract => {
-        const building = contract.apartment?.building || contract.parking?.building;
-        const unitId = contract.apartment?.unit || contract.parking?.unit;
-        const unit = appData.units[building]?.find(u => u.id === unitId);
-        select.innerHTML += `<option value="${contract.id}">${contract.owner} - ${unit?.name || ''}</option>`;
+        const building = contract.apartment ? contract.apartment.building : '';
+        const unitId = contract.apartment ? contract.apartment.unit : '';
+        const unit = appData.units[building] ? appData.units[building].find(u => u.id === unitId) : null;
+        select.innerHTML += '<option value="' + contract.id + '">' + contract.owner + ' - ' + (unit ? unit.name : '') + '</option>';
     });
 }
 
@@ -357,17 +415,17 @@ function populateContractSelects() {
     populatePaymentSelects();
     
     const invoiceSelect = document.getElementById('invoiceContract');
-    invoiceSelect.innerHTML = '<option value="">Изберете договор</option>';
-    
-    appData.contracts.forEach(contract => {
-        const building = contract.apartment?.building || contract.parking?.building;
-        const unitId = contract.apartment?.unit || contract.parking?.unit;
-        const unit = appData.units[building]?.find(u => u.id === unitId);
-        invoiceSelect.innerHTML += `<option value="${contract.id}">${contract.owner} - ${unit?.name || ''}</option>`;
-    });
+    if (invoiceSelect) {
+        invoiceSelect.innerHTML = '<option value="">Изберете договор</option>';
+        
+        appData.contracts.forEach(contract => {
+            const building = contract.apartment ? contract.apartment.building : '';
+            const unitId = contract.apartment ? contract.apartment.unit : '';
+            const unit = appData.units[building] ? appData.units[building].find(u => u.id === unitId) : null;
+            invoiceSelect.innerHTML += '<option value="' + contract.id + '">' + contract.owner + ' - ' + (unit ? unit.name : '') + '</option>';
+        });
+    }
 }
-
-function populatePaymentDetails() {}
 
 function savePayment(event) {
     event.preventDefault();
@@ -375,7 +433,6 @@ function savePayment(event) {
         date: document.getElementById('paymentDate').value,
         contractId: document.getElementById('paymentContract').value,
         amount: parseFloat(document.getElementById('paymentAmount').value),
-        currency: document.getElementById('paymentCurrency').value,
         type: document.getElementById('paymentType').value,
         method: document.getElementById('paymentMethod').value,
         notes: document.getElementById('paymentNotes').value,
@@ -396,47 +453,28 @@ function renderPayments() {
         const contract = appData.contracts.find(c => c.id === payment.contractId);
         if (!contract) return;
 
-        const building = contract.apartment?.building || contract.parking?.building;
-        const unitId = contract.apartment?.unit || contract.parking?.unit;
-        const unit = appData.units[building]?.find(u => u.id === unitId);
-        const currency = payment.currency || 'BGN';
+        const building = contract.apartment ? contract.apartment.building : '';
+        const unitId = contract.apartment ? contract.apartment.unit : '';
+        const unit = appData.units[building] ? appData.units[building].find(u => u.id === unitId) : null;
         
         html += `
             <tr>
-                <td>${new Date(payment.date).toLocaleDateString('bg-BG')}</td>
-                <td>${contract.owner}</td>
-                <td>${unit?.name || ''}</td>
-                <td>${typeNames[payment.type] || payment.type}</td>
-                <td>${payment.amount.toFixed(2)} ${currency}</td>
-                <td><span class="status-paid">✓ Платено</span></td>
-                <td><button class="danger" onclick="if(confirm('Сигурен ли си?')) deletePayment('${payment.id}')">🗑️ Изтрий</button></td>
+                <td data-label="Дата">${new Date(payment.date).toLocaleDateString('bg-BG')}</td>
+                <td data-label="Собственик">${contract.owner}</td>
+                <td data-label="Имот">${unit ? unit.name : ''}</td>
+                <td data-label="Тип">${typeNames[payment.type] || payment.type}</td>
+                <td data-label="Сума">${formatPrice(payment.amount)}</td>
+                <td data-label="Статус"><span class="status-paid">✓ Платено</span></td>
+                <td data-label="Действия"><button class="danger small" onclick="if(confirm('Сигурен ли си?')) deletePayment('${payment.id}')">🗑️</button></td>
             </tr>
         `;
     });
 
     document.getElementById('paymentsTable').innerHTML = html || '<tr><td colspan="7" style="text-align: center; padding: 20px;">Няма плащания.</td></tr>';
-    populatePaymentFilters();
 }
 
 function deletePayment(id) {
-    appData.payments = appData.payments.filter(p => p.id !== id);
-    appData.saveData('payments', appData.payments);
-    renderPayments();
-}
-
-function populatePaymentFilters() {
-    const buildingSelect = document.getElementById('paymentFilterBuilding');
-    const buildings = [...new Set(appData.contracts.map(c => c.apartment?.building || c.parking?.building).filter(Boolean))];
-    const currentValue = buildingSelect.value;
-    
-    buildingSelect.innerHTML = '<option value="">Всички сгради</option>';
-    buildings.forEach(building => {
-        buildingSelect.innerHTML += `<option value="${building}">${buildingNames[building]}</option>`;
-    });
-    buildingSelect.value = currentValue;
-}
-
-function filterPayments() {
+    appData.deletePayment(id);
     renderPayments();
 }
 
@@ -478,12 +516,12 @@ function renderInvoices() {
 
         html += `
             <tr>
-                <td>${invoice.number}</td>
-                <td>${new Date(invoice.date).toLocaleDateString('bg-BG')}</td>
-                <td>${contract.owner}</td>
-                <td>${typeNames[invoice.type]}</td>
-                <td>${invoice.amount.toFixed(2)} EUR</td>
-                <td><button class="danger" onclick="if(confirm('Сигурен ли си?')) deleteInvoice('${invoice.id}')">🗑️ Изтрий</button></td>
+                <td data-label="Номер">${invoice.number}</td>
+                <td data-label="Дата">${new Date(invoice.date).toLocaleDateString('bg-BG')}</td>
+                <td data-label="Собственик">${contract.owner}</td>
+                <td data-label="Тип">${typeNames[invoice.type]}</td>
+                <td data-label="Сума">${formatPrice(invoice.amount)}</td>
+                <td data-label="Действия"><button class="danger small" onclick="if(confirm('Сигурен ли си?')) deleteInvoice('${invoice.id}')">🗑️</button></td>
             </tr>
         `;
     });
@@ -492,296 +530,8 @@ function renderInvoices() {
 }
 
 function deleteInvoice(id) {
-    appData.invoices = appData.invoices.filter(i => i.id !== id);
-    appData.saveData('invoices', appData.invoices);
+    appData.deleteInvoice(id);
     renderInvoices();
-}
-
-function filterInvoices() {
-    renderInvoices();
-}
-
-function initializeSampleData() {
-    if (appData.contracts.length > 0) {
-        if (!confirm('Вече има данни! Изтрий ги и създай примерни?')) return;
-        appData.contracts = [];
-        appData.payments = [];
-        appData.invoices = [];
-    }
-
-    const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
-    const firstNames = ['Иван', 'Петър', 'Мария', 'Елена', 'Георги', 'Анна', 'Борис'];
-    const lastNames = ['Петров', 'Иванов', 'Атанасов', 'Георгиев', 'Василев', 'Сотиров', 'Тодоров'];
-
-    let contractCount = 0;
-    buildings.forEach(building => {
-        for (let i = 0; i < 8; i++) {
-            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            const hasApartment = Math.random() > 0.3;
-            const hasParking = Math.random() > 0.5;
-            
-            const apartmentUnit = hasApartment ? appData.units[building][Math.floor(Math.random() * 35)] : null;
-            const parkingUnit = hasParking ? appData.units[building][35 + Math.floor(Math.random() * 15)] : null;
-            
-            if (!apartmentUnit && !parkingUnit) continue;
-            
-            const apartmentValue = apartmentUnit ? 50000 + Math.random() * 50000 : 0;
-            const parkingValue = parkingUnit ? 5000 + Math.random() * 5000 : 0;
-            const totalValue = apartmentValue + parkingValue;
-
-            const contract = {
-                id: 'contract_' + contractCount++,
-                owner: firstName + ' ' + lastName,
-                phone: '088' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0'),
-                date: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
-                apartment: {
-                    building: hasApartment ? building : '',
-                    unit: hasApartment ? apartmentUnit.id : '',
-                    value: parseFloat(apartmentValue.toFixed(2))
-                },
-                parking: {
-                    building: hasParking ? building : '',
-                    unit: hasParking ? parkingUnit.id : '',
-                    value: parseFloat(parkingValue.toFixed(2))
-                },
-                totalValue: parseFloat(totalValue.toFixed(2)),
-                advance: {
-                    percent: 30,
-                    date: new Date(2024, 0, 15).toISOString().split('T')[0]
-                },
-                installment1: {
-                    percent: 35,
-                    date: new Date(2024, 3, 15).toISOString().split('T')[0]
-                },
-                installment2: {
-                    percent: 35,
-                    date: new Date(2024, 6, 15).toISOString().split('T')[0]
-                },
-                notes: 'Примерни данни'
-            };
-
-            appData.contracts.push(contract);
-
-            if (Math.random() > 0.3) {
-                appData.payments.push({
-                    id: 'payment_' + Date.now() + Math.random(),
-                    contractId: contract.id,
-                    date: contract.advance.date,
-                    amount: contract.totalValue * contract.advance.percent / 100,
-                    currency: 'EUR',
-                    type: 'advance',
-                    method: Math.random() > 0.5 ? 'bank' : 'cash',
-                    notes: 'Платено',
-                    status: 'paid'
-                });
-            }
-        }
-    });
-
-    appData.saveData('contracts', appData.contracts);
-    appData.saveData('payments', appData.payments);
-    alert('✅ Примерни данни създадени успешно!');
-    updateDashboard();
-    renderContracts();
-}
-
-function exportToExcel() {
-    let contractsCSV = 'Договор,Собственик,Телефон,Дата,Сграда апартамент,Апартамент,Стойност апартамент,Сграда паркомясто,Паркомясто,Стойност паркомясто,Обща стойност,Аванс %,Дата на аванс,Доплащане 1 %,Дата на доплащане 1,Доплащане 2 %,Дата на доплащане 2,Бележки\n';
-    appData.contracts.forEach(contract => {
-        const apartmentUnit = contract.apartment?.unit ? appData.units[contract.apartment.building]?.find(u => u.id === contract.apartment.unit) : null;
-        const parkingUnit = contract.parking?.unit ? appData.units[contract.parking.building]?.find(u => u.id === contract.parking.unit) : null;
-        
-        contractsCSV += `"${contract.id}","${contract.owner}","${contract.phone}","${contract.date}","${contract.apartment?.building ? buildingNames[contract.apartment.building] : ''}","${apartmentUnit?.name || ''}","${contract.apartment?.value || ''}","${contract.parking?.building ? buildingNames[contract.parking.building] : ''}","${parkingUnit?.name || ''}","${contract.parking?.value || ''}","${contract.totalValue}","${contract.advance.percent}","${contract.advance.date}","${contract.installment1.percent}","${contract.installment1.date}","${contract.installment2.percent}","${contract.installment2.date}","${contract.notes}"\n`;
-    });
-
-    let paymentsCSV = 'Договор,Собственик,Дата на плащане,Сума,Валута,Тип,Метод,Бележки\n';
-    appData.payments.forEach(payment => {
-        const contract = appData.contracts.find(c => c.id === payment.contractId);
-        if (contract) {
-            const currency = payment.currency || 'BGN';
-            paymentsCSV += `"${contract.id}","${contract.owner}","${payment.date}","${payment.amount}","${currency}","${payment.type}","${payment.method}","${payment.notes}"\n`;
-        }
-    });
-
-    let invoicesCSV = 'Номер,Дата,Собственик,Тип,Сума (EUR),Описание\n';
-    appData.invoices.forEach(invoice => {
-        const contract = appData.contracts.find(c => c.id === invoice.contractId);
-        if (contract) {
-            invoicesCSV += `"${invoice.number}","${invoice.date}","${contract.owner}","${invoice.type}","${invoice.amount}","${invoice.description}"\n`;
-        }
-    });
-
-    const timestamp = new Date().getTime();
-    
-    downloadCSV(contractsCSV, `contracts_${timestamp}.csv`);
-    setTimeout(() => downloadCSV(paymentsCSV, `payments_${timestamp}.csv`), 500);
-    setTimeout(() => downloadCSV(invoicesCSV, `invoices_${timestamp}.csv`), 1000);
-    
-    alert('✅ Excel файлове експортирани! Ще видиш 3 CSV файла:\n- contracts_*.csv\n- payments_*.csv\n- invoices_*.csv');
-}
-
-function downloadCSV(csvContent, filename) {
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function importFromExcel() {
-    const file = document.getElementById('importExcelFile').files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const csv = e.target.result;
-            const lines = csv.split('\n');
-            const headers = lines[0];
-            
-            if (headers.includes('Дата на аванс')) {
-                importContractsCSV(lines);
-            } else if (headers.includes('Валута')) {
-                importPaymentsCSV(lines);
-            } else if (headers.includes('Сума (EUR)')) {
-                importInvoicesCSV(lines);
-            }
-            
-            alert('✅ Excel файл импортиран успешно!');
-            appData.saveData('contracts', appData.contracts);
-            appData.saveData('payments', appData.payments);
-            appData.saveData('invoices', appData.invoices);
-            location.reload();
-        } catch (error) {
-            alert('❌ Грешка при импортиране: ' + error.message);
-        }
-    };
-    reader.readAsText(file);
-}
-
-function importContractsCSV(lines) {
-    appData.contracts = [];
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        
-        const values = parseCSVLine(lines[i]);
-        if (values.length < 19) continue;
-        
-        const contract = {
-            id: values[0],
-            owner: values[1],
-            phone: values[2],
-            date: values[3],
-            apartment: {
-                building: Object.keys(buildingNames).find(k => buildingNames[k] === values[4]) || '',
-                unit: findUnitByName(values[5], values[4]) || '',
-                value: parseFloat(values[6] || 0)
-            },
-            parking: {
-                building: Object.keys(buildingNames).find(k => buildingNames[k] === values[7]) || '',
-                unit: findUnitByName(values[8], values[7]) || '',
-                value: parseFloat(values[9] || 0)
-            },
-            totalValue: parseFloat(values[10]),
-            advance: {
-                percent: parseFloat(values[11]),
-                date: values[12]
-            },
-            installment1: {
-                percent: parseFloat(values[13]),
-                date: values[14]
-            },
-            installment2: {
-                percent: parseFloat(values[15]),
-                date: values[16]
-            },
-            notes: values[17] || ''
-        };
-        appData.contracts.push(contract);
-    }
-}
-
-function importPaymentsCSV(lines) {
-    appData.payments = [];
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        
-        const values = parseCSVLine(lines[i]);
-        if (values.length < 8) continue;
-        
-        const payment = {
-            id: 'payment_' + i + '_' + Date.now(),
-            contractId: values[0],
-            date: values[2],
-            amount: parseFloat(values[3]),
-            currency: values[4],
-            type: values[5],
-            method: values[6],
-            notes: values[7],
-            status: 'paid'
-        };
-        appData.payments.push(payment);
-    }
-}
-
-function importInvoicesCSV(lines) {
-    appData.invoices = [];
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        
-        const values = parseCSVLine(lines[i]);
-        if (values.length < 6) continue;
-        
-        const invoice = {
-            id: 'invoice_' + i + '_' + Date.now(),
-            contractId: findContractByOwner(values[2]),
-            number: values[0],
-            date: values[1],
-            type: values[3],
-            amount: parseFloat(values[4]),
-            description: values[5]
-        };
-        appData.invoices.push(invoice);
-    }
-}
-
-function parseCSVLine(line) {
-    const result = [];
-    let current = '';
-    let insideQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        
-        if (char === '"') {
-            insideQuotes = !insideQuotes;
-        } else if (char === ',' && !insideQuotes) {
-            result.push(current.trim());
-            current = '';
-        } else {
-            current += char;
-        }
-    }
-    result.push(current.trim());
-    return result;
-}
-
-function findUnitByName(unitName, buildingName) {
-    const building = Object.keys(buildingNames).find(k => buildingNames[k] === buildingName);
-    if (!building) return '';
-    
-    const unit = appData.units[building]?.find(u => u.name === unitName);
-    return unit ? unit.id : '';
-}
-
-function findContractByOwner(ownerName) {
-    const contract = appData.contracts.find(c => c.owner === ownerName);
-    return contract ? contract.id : '';
 }
 
 function exportData() {
@@ -789,6 +539,7 @@ function exportData() {
         contracts: appData.contracts,
         payments: appData.payments,
         invoices: appData.invoices,
+        units: appData.units,
         exportDate: new Date().toISOString()
     };
 
@@ -812,6 +563,10 @@ function importData() {
             if (data.contracts) appData.contracts = data.contracts;
             if (data.payments) appData.payments = data.payments;
             if (data.invoices) appData.invoices = data.invoices;
+            if (data.units) {
+                appData.units = data.units;
+                appData.saveData('units', appData.units);
+            }
 
             appData.saveData('contracts', appData.contracts);
             appData.saveData('payments', appData.payments);
@@ -835,3 +590,7 @@ window.addEventListener('load', function() {
         if (!input.value) input.value = today;
     });
 });
+
+function editContract(id) {
+    alert('Редакцията ще бъде добавена в бъдеща версия');
+}
