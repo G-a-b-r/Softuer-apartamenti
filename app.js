@@ -237,7 +237,7 @@ function openBuildingDetail(building) {
         const status = unit.status || 'free';
         const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
         const statusOptions = `
-            <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${index}, this.value)">
+            <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${index}, this.value, this)">
                 <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
                 <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
                 <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
@@ -260,14 +260,13 @@ function openBuildingDetail(building) {
     document.getElementById('apartmentsModal').classList.add('active');
 }
 
-function updateUnitStatus(building, index, status) {
+function updateUnitStatus(building, index, status, selectEl) {
     if (!appData.units[building][index]) return;
     appData.units[building][index].status = status;
     appData.saveData('units', appData.units);
     
-    const select = document.querySelectorAll('#apartmentsList tr')[index].querySelector('.status-select');
-    if (select) {
-        select.className = 'status-select ' + (status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available');
+    if (selectEl) {
+        selectEl.className = 'status-select ' + (status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available');
     }
 }
 

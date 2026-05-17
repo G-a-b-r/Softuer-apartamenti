@@ -490,21 +490,24 @@ table .actions-cell button {
 }
 
 .status-select.status-sold {
-    background: #ffebee;
-    color: #c62828;
-    border-color: #ffcdd2;
+    background: #f44336;
+    color: white;
+    border-color: #d32f2f;
+    font-weight: 600;
 }
 
 .status-select.status-reserved {
-    background: #fff3e0;
-    color: #e65100;
-    border-color: #ffe0b2;
+    background: #ff9800;
+    color: white;
+    border-color: #f57c00;
+    font-weight: 600;
 }
 
 .status-select.status-available {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border-color: #c8e6c9;
+    background: #4caf50;
+    color: white;
+    border-color: #388e3c;
+    font-weight: 600;
 }
 
 .stats-row {
