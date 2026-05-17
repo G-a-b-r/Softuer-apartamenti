@@ -223,6 +223,7 @@ function openBuildingDetail(building) {
         <table>
             <thead>
                 <tr>
+                    <th style="width:40px"></th>
                     <th>ID</th>
                     <th>Апартамент</th>
                     <th>Квадратура (м²)</th>
@@ -245,7 +246,8 @@ function openBuildingDetail(building) {
         `;
         
         html += `
-            <tr>
+            <tr onclick="toggleRowHighlight(this)">
+                <td data-label="" style="text-align:center"><input type="checkbox" onclick="event.stopPropagation(); toggleRowHighlight(this.closest('tr'))"></td>
                 <td data-label="ID">${unit.id}</td>
                 <td data-label="Апартамент">${unit.name}</td>
                 <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
@@ -272,6 +274,12 @@ function updateUnitStatus(building, index, status, selectEl) {
 
 function closeApartmentsModal() {
     document.getElementById('apartmentsModal').classList.remove('active');
+}
+
+function toggleRowHighlight(row) {
+    row.classList.toggle('row-highlighted');
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    if (checkbox) checkbox.checked = row.classList.contains('row-highlighted');
 }
 
 function openContractModal() {
