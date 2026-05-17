@@ -40,6 +40,7 @@ class AppData {
             '10135.5061.74.1.26', '10135.5061.74.1.27', '10135.5061.74.1.28', '10135.5061.74.1.29', '10135.5061.74.1.30',
             '10135.5061.74.1.31', '10135.5061.74.1.32'
         ];
+        const building_a_types = ['мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен', '2 стаен', '2 инвалиден', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен'];
         
         for (let building of buildings) {
             units[building] = [];
@@ -61,6 +62,17 @@ class AppData {
                     'type': 'apartment',
                     'sqm': size,
                     'price': price,
+                    'status': 'free',
+                    'aptType': (building === 'building_a' && i < building_a_types.length) ? building_a_types[i] : ''
+                });
+            }
+            for (let i = 0; i < 15; i++) {
+                units[building].push({
+                    'id': building + '_park' + (i+1),
+                    'name': 'Паркомясто ' + (i+1),
+                    'type': 'parking',
+                    'sqm': 12,
+                    'price': 8000,
                     'status': 'free'
                 });
             }
@@ -118,6 +130,7 @@ class AppData {
     getStats() {
         const stats = {};
         const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+        let totalParkingSpots = 0, soldParkingSpots = 0;
         
         buildings.forEach(building => {
             const buildingContracts = this.getContractsByBuilding(building);
@@ -128,6 +141,9 @@ class AppData {
             }, 0);
             
             const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
+            const parkingUnits = this.units[building] ? this.units[building].filter(u => u.type === 'parking') : [];
+            totalParkingSpots += parkingUnits.length;
+            soldParkingSpots += parkingUnits.filter(u => u.status === 'sold').length;
             
             stats[building] = {
                 totalUnits: totalUnits,
@@ -137,6 +153,12 @@ class AppData {
                 remaining: totalValue - totalPaid
             };
         });
+
+        stats.parking = {
+            total: totalParkingSpots,
+            sold: soldParkingSpots,
+            available: totalParkingSpots - soldParkingSpots
+        };
         
         return stats;
     }
@@ -144,6 +166,16 @@ class AppData {
 
 let appData = new AppData();
 const buildingNames = { 'building_a': 'Сграда А', 'building_b': 'Сграда Б', 'building_c': 'Сграда В', 'building_d': 'Сграда Г', 'building_e': 'Сграда Д' };
+
+const tabsSentinel = document.createElement('div');
+tabsSentinel.style.height = '1px';
+tabsSentinel.style.width = '1px';
+document.querySelector('.tabs').parentNode.insertBefore(tabsSentinel, document.querySelector('.tabs'));
+const tabsObserver = new IntersectionObserver(
+    ([e]) => document.querySelector('.tabs').classList.toggle('stuck', !e.isIntersecting),
+    { threshold: [0] }
+);
+tabsObserver.observe(tabsSentinel);
 
 function formatPrice(price) {
     let str = price.toFixed(2);
@@ -173,7 +205,10 @@ function updateDashboard() {
     const stats = appData.getStats();
     let html = '';
 
-    for (let [building, stat] of Object.entries(stats)) {
+    const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+
+    for (let building of buildings) {
+        const stat = stats[building];
         html += `
             <div class="summary-card clickable" onclick="openBuildingDetail('${building}')">
                 <h3>${buildingNames[building]}</h3>
@@ -194,13 +229,33 @@ function updateDashboard() {
                     <span class="summary-value positive">${formatPrice(stat.totalPaid)}</span>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-label">Преостатък:</span>
+                    <span class="summary-label">Остатък:</span>
                     <span class="summary-value negative">${formatPrice(stat.remaining)}</span>
                 </div>
                 <div class="view-more">Виж всички имоти →</div>
             </div>
         `;
     }
+
+    const p = stats.parking;
+    html += `
+        <div class="summary-card clickable" onclick="openParkingDetail()">
+            <h3>Паркоместа</h3>
+            <div class="summary-item">
+                <span class="summary-label">Общо:</span>
+                <span class="summary-value">${p.total}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Продадени:</span>
+                <span class="summary-value positive">${p.sold}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Свободни:</span>
+                <span class="summary-value negative">${p.available}</span>
+            </div>
+            <div class="view-more">Виж всички паркоместа →</div>
+        </div>
+    `;
 
     document.getElementById('dashboardSummary').innerHTML = html;
 
@@ -217,17 +272,19 @@ function updateDashboard() {
 
 function openBuildingDetail(building) {
     document.getElementById('apartmentsModalTitle').textContent = buildingNames[building];
-    const units = appData.units[building] || [];
+    const units = appData.units[building] ? appData.units[building].filter(u => u.type === 'apartment') : [];
     
     let html = `
         <table>
             <thead>
                 <tr>
                     <th style="width:40px"></th>
-                    <th>ID</th>
+                    <th>Идентификатор</th>
                     <th>Апартамент</th>
+                    <th>Вид</th>
                     <th>Квадратура (м²)</th>
                     <th>Цена</th>
+                    <th></th>
                     <th>Статус</th>
                 </tr>
             </thead>
@@ -246,12 +303,14 @@ function openBuildingDetail(building) {
         `;
         
         html += `
-            <tr onclick="toggleRowHighlight(this)">
-                <td data-label="" style="text-align:center"><input type="checkbox" onclick="event.stopPropagation(); toggleRowHighlight(this.closest('tr'))"></td>
-                <td data-label="ID">${unit.id}</td>
+            <tr>
+                <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
+                <td data-label="Идентификатор">${unit.id}</td>
                 <td data-label="Апартамент">${unit.name}</td>
+                <td data-label="Вид">${unit.aptType || '-'}</td>
                 <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
                 <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
+                <td data-label=""><button class="small secondary" onclick="editPrice('${building}', ${index})" title="Редактирай цена">✏️</button></td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -260,16 +319,86 @@ function openBuildingDetail(building) {
     html += '</tbody></table>';
     document.getElementById('apartmentsList').innerHTML = html;
     document.getElementById('apartmentsModal').classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function openParkingDetail() {
+    document.getElementById('apartmentsModalTitle').textContent = 'Паркоместа';
+    const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+    
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px"></th>
+                    <th>Идентификатор</th>
+                    <th>Име</th>
+                    <th>Сграда</th>
+                    <th>Цена</th>
+                    <th></th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    buildings.forEach(building => {
+        const parkingUnits = appData.units[building] ? appData.units[building].filter(u => u.type === 'parking') : [];
+        parkingUnits.forEach((unit, idx) => {
+            const globalIndex = appData.units[building].indexOf(unit);
+            const status = unit.status || 'free';
+            const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
+            const statusOptions = `
+                <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${globalIndex}, this.value, this)">
+                    <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
+                    <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
+                    <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
+                </select>
+            `;
+            
+            html += `
+                <tr>
+                    <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
+                    <td data-label="Идентификатор">${unit.id}</td>
+                    <td data-label="Име">${unit.name}</td>
+                    <td data-label="Сграда">${buildingNames[building]}</td>
+                    <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
+                    <td data-label=""><button class="small secondary" onclick="editPrice('${building}', ${globalIndex})" title="Редактирай цена">✏️</button></td>
+                    <td data-label="Статус">${statusOptions}</td>
+                </tr>
+            `;
+        });
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('apartmentsList').innerHTML = html;
+    document.getElementById('apartmentsModal').classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 function updateUnitStatus(building, index, status, selectEl) {
-    if (!appData.units[building][index]) return;
+    if (!appData.units[building] || !appData.units[building][index]) return;
     appData.units[building][index].status = status;
     appData.saveData('units', appData.units);
     
     if (selectEl) {
         selectEl.className = 'status-select ' + (status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available');
     }
+}
+
+function editPrice(building, index) {
+    if (!appData.units[building] || !appData.units[building][index]) return;
+    const unit = appData.units[building][index];
+    const newPrice = prompt('Нова цена за ' + unit.name + ' (в €):', unit.price);
+    if (newPrice === null) return;
+    const num = parseFloat(newPrice.replace(/[^0-9.]/g, ''));
+    if (isNaN(num) || num <= 0) {
+        alert('Моля, въведете валидна цена!');
+        return;
+    }
+    unit.price = num;
+    appData.saveData('units', appData.units);
+    openBuildingDetail(building);
 }
 
 function closeApartmentsModal() {
