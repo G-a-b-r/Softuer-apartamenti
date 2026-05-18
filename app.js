@@ -403,6 +403,7 @@ function editPrice(building, index) {
 
 function closeApartmentsModal() {
     document.getElementById('apartmentsModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
 }
 
 function toggleRowHighlight(row) {
