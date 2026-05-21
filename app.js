@@ -81,10 +81,30 @@ class AppData {
             '10135.5061.74.3.26', '10135.5061.74.3.27', '10135.5061.74.3.28', '10135.5061.74.3.29', '10135.5061.74.3.30',
             '10135.5061.74.3.31', '10135.5061.74.3.32'
         ];
+        const building_d_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
+        const building_d_prices = [220165.00, 304411.00, 161601.00, 281024.00, 209151.00, 151086.00, 100261.00, 167425.00, 155392.00, 107414.00, 127662.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 127662.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 127662.00, 167914.00, 187234.00, 165087.00, 164163.00, 113854.00, 130959.00, 167184.00, 186420.00, 164369.00];
+        const building_d_types = [
+            'мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен',
+            '3 стаен', '2 инвалид', '3 стаен', '3 стаен', '2 стаен',
+            '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен',
+            '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен',
+            '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен',
+            '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен',
+            '3 стаен', '3 стаен'
+        ];
+        const building_d_ids = [
+            '10135.5061.74.4.1', '10135.5061.74.4.2', '10135.5061.74.4.3', '10135.5061.74.4.4', '10135.5061.74.4.5',
+            '10135.5061.74.4.6', '10135.5061.74.4.7', '10135.5061.74.4.8', '10135.5061.74.4.9', '10135.5061.74.4.10',
+            '10135.5061.74.4.11', '10135.5061.74.4.12', '10135.5061.74.4.13', '10135.5061.74.4.14', '10135.5061.74.4.15',
+            '10135.5061.74.4.16', '10135.5061.74.4.17', '10135.5061.74.4.18', '10135.5061.74.4.19', '10135.5061.74.4.20',
+            '10135.5061.74.4.21', '10135.5061.74.4.22', '10135.5061.74.4.23', '10135.5061.74.4.24', '10135.5061.74.4.25',
+            '10135.5061.74.4.26', '10135.5061.74.4.27', '10135.5061.74.4.28', '10135.5061.74.4.29', '10135.5061.74.4.30',
+            '10135.5061.74.4.31', '10135.5061.74.4.32'
+        ];
         
         for (let building of buildings) {
             units[building] = [];
-            const apt_count = building === 'building_a' ? 32 : building === 'building_b' ? 32 : building === 'building_c' ? 32 : 35;
+            const apt_count = building === 'building_a' ? 32 : building === 'building_b' ? 32 : building === 'building_c' ? 32 : building === 'building_d' ? 32 : 35;
             for (let i = 0; i < apt_count; i++) {
                 let size, price, apt_id;
                 if (building === 'building_a' && i < building_a_sizes.length) {
@@ -99,6 +119,10 @@ class AppData {
                     size = building_c_sizes[i];
                     price = building_c_prices[i];
                     apt_id = building_c_ids[i];
+                } else if (building === 'building_d' && i < building_d_ids.length) {
+                    size = building_d_sizes[i];
+                    price = building_d_prices[i];
+                    apt_id = building_d_ids[i];
                 } else {
                     size = 50 + (i * 5) % 100;
                     price = size * 850;
@@ -111,7 +135,7 @@ class AppData {
                     'sqm': size,
                     'price': price,
                     'status': 'free',
-                    'aptType': (building === 'building_a' && i < building_a_types.length) ? building_a_types[i] : (building === 'building_b' && i < building_b_types.length) ? building_b_types[i] : (building === 'building_c' && i < building_c_types.length) ? building_c_types[i] : ''
+                    'aptType': (building === 'building_a' && i < building_a_types.length) ? building_a_types[i] : (building === 'building_b' && i < building_b_types.length) ? building_b_types[i] : (building === 'building_c' && i < building_c_types.length) ? building_c_types[i] : (building === 'building_d' && i < building_d_types.length) ? building_d_types[i] : ''
                 });
             }
             for (let i = 0; i < 15; i++) {
