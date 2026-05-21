@@ -162,16 +162,20 @@ class AppData {
                     'aptType': (building === 'building_a' && i < building_a_types.length) ? building_a_types[i] : (building === 'building_b' && i < building_b_types.length) ? building_b_types[i] : (building === 'building_c' && i < building_c_types.length) ? building_c_types[i] : (building === 'building_d' && i < building_d_types.length) ? building_d_types[i] : (building === 'building_e' && i < building_e_types.length) ? building_e_types[i] : ''
                 });
             }
-            for (let i = 0; i < 15; i++) {
-                units[building].push({
-                    'id': building + '_park' + (i+1),
-                    'name': 'Паркомясто ' + (i+1),
-                    'type': 'parking',
-                    'sqm': 12,
-                    'price': 8000,
-                    'status': 'free'
-                });
-            }
+        }
+        
+        const parkingDisabled = [1, 2, 58, 59, 113, 114, 154, 175];
+        units['parking'] = [];
+        for (let i = 1; i <= 191; i++) {
+            const name = parkingDisabled.includes(i) ? 'ПМ ' + i + ' инвалидно' : 'ПМ ' + i;
+            units['parking'].push({
+                'id': 'parking_' + i,
+                'name': name,
+                'type': 'parking',
+                'sqm': 12,
+                'price': 8000,
+                'status': 'free'
+            });
         }
         
         return units;
@@ -226,8 +230,6 @@ class AppData {
     getStats() {
         const stats = {};
         const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
-        let totalParkingSpots = 0, soldParkingSpots = 0;
-        
         buildings.forEach(building => {
             const buildingContracts = this.getContractsByBuilding(building);
             const totalValue = buildingContracts.reduce((sum, c) => sum + parseFloat(c.totalValue || 0), 0);
@@ -237,9 +239,6 @@ class AppData {
             }, 0);
             
             const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
-            const parkingUnits = this.units[building] ? this.units[building].filter(u => u.type === 'parking') : [];
-            totalParkingSpots += parkingUnits.length;
-            soldParkingSpots += parkingUnits.filter(u => u.status === 'sold').length;
             
             stats[building] = {
                 totalUnits: totalUnits,
@@ -250,10 +249,11 @@ class AppData {
             };
         });
 
+        const parkingUnits = this.units['parking'] || [];
         stats.parking = {
-            total: totalParkingSpots,
-            sold: soldParkingSpots,
-            available: totalParkingSpots - soldParkingSpots
+            total: parkingUnits.length,
+            sold: parkingUnits.filter(u => u.status === 'sold').length,
+            available: parkingUnits.filter(u => u.status !== 'sold').length
         };
         
         return stats;
@@ -420,7 +420,7 @@ function openBuildingDetail(building) {
 
 function openParkingDetail() {
     document.getElementById('apartmentsModalTitle').textContent = 'Паркоместа';
-    const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+    const parkingUnits = appData.units['parking'] || [];
     
     let html = `
         <table>
@@ -429,7 +429,6 @@ function openParkingDetail() {
                     <th style="width:40px"></th>
                     <th>Идентификатор</th>
                     <th>Име</th>
-                    <th>Сграда</th>
                     <th>Цена</th>
                     <th></th>
                     <th>Статус</th>
@@ -438,32 +437,27 @@ function openParkingDetail() {
             <tbody>
     `;
 
-    buildings.forEach(building => {
-        const parkingUnits = appData.units[building] ? appData.units[building].filter(u => u.type === 'parking') : [];
-        parkingUnits.forEach((unit, idx) => {
-            const globalIndex = appData.units[building].indexOf(unit);
-            const status = unit.status || 'free';
-            const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
-            const statusOptions = `
-                <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${globalIndex}, this.value, this)">
-                    <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
-                    <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
-                    <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
-                </select>
-            `;
-            
-            html += `
-                <tr>
-                    <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
-                    <td data-label="Идентификатор">${unit.id}</td>
-                    <td data-label="Име">${unit.name}</td>
-                    <td data-label="Сграда">${buildingNames[building]}</td>
-                    <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
-                    <td data-label=""><button class="small secondary" onclick="editPrice('${building}', ${globalIndex})" title="Редактирай цена">✏️</button></td>
-                    <td data-label="Статус">${statusOptions}</td>
-                </tr>
-            `;
-        });
+    parkingUnits.forEach((unit, index) => {
+        const status = unit.status || 'free';
+        const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
+        const statusOptions = `
+            <select class="status-select ${statusClass}" onchange="updateUnitStatus('parking', ${index}, this.value, this)">
+                <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
+                <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
+                <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
+            </select>
+        `;
+        
+        html += `
+            <tr>
+                <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
+                <td data-label="Идентификатор">${unit.id}</td>
+                <td data-label="Име">${unit.name}</td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
+                <td data-label=""><button class="small secondary" onclick="editPrice('parking', ${index})" title="Редактирай цена">✏️</button></td>
+                <td data-label="Статус">${statusOptions}</td>
+            </tr>
+        `;
     });
 
     html += '</tbody></table>';
@@ -537,7 +531,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (apartmentBuildingSelect) {
         apartmentBuildingSelect.addEventListener('change', populateApartmentsSelect);
     }
+    const parkingBuildingSelect = document.getElementById('parkingBuilding');
+    if (parkingBuildingSelect) {
+        parkingBuildingSelect.addEventListener('change', populateParkingSelect);
+    }
+    if (document.getElementById('parkingUnit')) {
+        populateParkingSelect();
+    }
 });
+
+function populateParkingSelect() {
+    const select = document.getElementById('parkingUnit');
+    if (!select) return;
+    select.innerHTML = '<option value="">Изберете паркомясто</option>';
+    const parkingUnits = appData.units['parking'] || [];
+    parkingUnits.forEach(unit => {
+        select.innerHTML += '<option value="' + unit.id + '">' + unit.name + '</option>';
+    });
+}
 
 function saveContract(event) {
     event.preventDefault();
