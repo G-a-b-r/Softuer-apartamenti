@@ -4,8 +4,11 @@ class AppData {
         this.payments = this.loadData('payments', []);
         this.invoices = this.loadData('invoices', []);
         
-        this.units = this.generateUnits();
-        this.saveData('units', this.units);
+        this.units = this.loadData('units', null);
+        if (!this.units) {
+            this.units = this.generateUnits();
+            this.saveData('units', this.units);
+        }
     }
 
     loadData(key, defaultValue) {
@@ -167,13 +170,13 @@ class AppData {
         const parkingDisabled = [1, 2, 58, 59, 113, 114, 154, 175];
         units['parking'] = [];
         for (let i = 1; i <= 191; i++) {
-            const name = parkingDisabled.includes(i) ? 'ПМ ' + i + ' инвалидно' : 'ПМ ' + i;
+            const id = parkingDisabled.includes(i) ? 'ПМ ' + i + ' инвалидно' : 'ПМ ' + i;
             units['parking'].push({
-                'id': 'parking_' + i,
-                'name': name,
+                'id': id,
+                'name': 'Паркомясто ' + i,
                 'type': 'parking',
                 'sqm': 12,
-                'price': 8000,
+                'price': 8500,
                 'status': 'free'
             });
         }
@@ -380,7 +383,6 @@ function openBuildingDetail(building) {
                     <th>Вид</th>
                     <th>Квадратура (м²)</th>
                     <th>Цена (€)</th>
-                    <th></th>
                     <th>Статус</th>
                 </tr>
             </thead>
@@ -405,8 +407,7 @@ function openBuildingDetail(building) {
                 <td data-label="Апартамент">${unit.name}</td>
                 <td data-label="Вид">${unit.aptType || '-'}</td>
                 <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
-                <td data-label=""><button class="small secondary" onclick="editPrice('${building}', ${index})" title="Редактирай цена">✏️</button></td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}&nbsp;&nbsp;<button class="small secondary" onclick="editPrice('${building}', ${index})" title="Редактирай цена">✏️</button></td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -430,7 +431,6 @@ function openParkingDetail() {
                     <th>Идентификатор</th>
                     <th>Име</th>
                     <th>Цена</th>
-                    <th></th>
                     <th>Статус</th>
                 </tr>
             </thead>
@@ -453,8 +453,7 @@ function openParkingDetail() {
                 <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
                 <td data-label="Идентификатор">${unit.id}</td>
                 <td data-label="Име">${unit.name}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}</td>
-                <td data-label=""><button class="small secondary" onclick="editPrice('parking', ${index})" title="Редактирай цена">✏️</button></td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}&nbsp;&nbsp;<button class="small secondary" onclick="editPrice('parking', ${index})" title="Редактирай цена">✏️</button></td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
