@@ -191,6 +191,13 @@ class AppData {
         return contract;
     }
 
+    updateContract(id, data) {
+        const idx = this.contracts.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        this.contracts[idx] = { ...this.contracts[idx], ...data };
+        this.saveData('contracts', this.contracts);
+    }
+
     deleteContract(id) {
         this.contracts = this.contracts.filter(c => c.id !== id);
         this.saveData('contracts', this.contracts);
@@ -242,9 +249,16 @@ class AppData {
             }, 0);
             
             const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
+            const contractedIds = new Set(
+                this.contracts
+                    .filter(c => c.apartment && c.apartment.building === building)
+                    .map(c => c.apartment.unit)
+            );
+            const availableUnits = totalUnits - contractedIds.size;
             
             stats[building] = {
                 totalUnits: totalUnits,
+                availableUnits: availableUnits,
                 contractCount: buildingContracts.length,
                 totalValue: totalValue,
                 totalPaid: totalPaid,
@@ -277,7 +291,9 @@ const tabsObserver = new IntersectionObserver(
 tabsObserver.observe(tabsSentinel);
 
 function formatPrice(price) {
-    let str = price.toFixed(2);
+    let num = Math.round(parseFloat(price) * 100) / 100;
+    if (isNaN(num)) num = 0;
+    let str = num.toFixed(2);
     let parts = str.split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     return parts.join('.');
@@ -314,6 +330,10 @@ function updateDashboard() {
                 <div class="summary-item">
                     <span class="summary-label">Апартаменти:</span>
                     <span class="summary-value">${stat.totalUnits}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Оставащи:</span>
+                    <span class="summary-value">${stat.availableUnits}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Активни договори:</span>
@@ -501,12 +521,19 @@ function toggleRowHighlight(row) {
     if (checkbox) checkbox.checked = row.classList.contains('row-highlighted');
 }
 
+let editingContractId = null;
+
 function openContractModal() {
+    editingContractId = null;
     document.getElementById('contractModal').classList.add('active');
+    document.querySelector('#contractModal .modal-header span').textContent = 'Нов договор';
+    document.getElementById('contractForm').reset();
     document.getElementById('contractDate').valueAsDate = new Date();
     document.getElementById('advanceDate').valueAsDate = new Date();
     document.getElementById('installment1Date').valueAsDate = new Date(Date.now() + 30*24*60*60*1000);
     document.getElementById('installment2Date').valueAsDate = new Date(Date.now() + 60*24*60*60*1000);
+    populateApartmentsSelect();
+    populateParkingSelect();
 }
 
 function closeContractModal() {
@@ -552,23 +579,21 @@ function populateParkingSelect() {
 function saveContract(event) {
     event.preventDefault();
     
-    const apartmentValue = parseFloat(document.getElementById('apartmentValue').value || 0);
+    const apartmentValue = Math.round(parseFloat(document.getElementById('apartmentValue').value || 0) * 100) / 100;
     const totalValue = apartmentValue;
     
-    if (totalValue === 0) {
-        alert('⚠️ Моля, въведи стойност на апартамент!');
+    if (!totalValue || totalValue <= 0) {
+        alert('Моля, въведи стойност на апартамент!');
         return;
     }
     
-    const contract = {
+    const building = document.getElementById('apartmentBuilding').value;
+    const unit = document.getElementById('apartmentUnit').value;
+
+    const data = {
         owner: document.getElementById('contractOwner').value,
         phone: document.getElementById('contractPhone').value,
         date: document.getElementById('contractDate').value,
-        apartment: {
-            building: document.getElementById('apartmentBuilding').value,
-            unit: document.getElementById('apartmentUnit').value,
-            value: apartmentValue
-        },
         totalValue: totalValue,
         advance: {
             percent: parseFloat(document.getElementById('advancePercent').value),
@@ -585,11 +610,19 @@ function saveContract(event) {
         notes: document.getElementById('contractNotes').value
     };
 
-    appData.addContract(contract);
+    if (building) {
+        data.apartment = { building: building, unit: unit, value: apartmentValue };
+    }
+
+    if (editingContractId) {
+        appData.updateContract(editingContractId, data);
+    } else {
+        appData.addContract(data);
+    }
     closeContractModal();
     renderContracts();
     populateContractSelects();
-    alert('✅ Договор запазен успешно!');
+    alert('✅ Договорът е запазен успешно!');
 }
 
 function renderContracts() {
@@ -835,5 +868,28 @@ window.addEventListener('load', function() {
 });
 
 function editContract(id) {
-    alert('Редакцията ще бъде добавена в бъдеща версия');
+    const contract = appData.contracts.find(c => c.id === id);
+    if (!contract) return;
+
+    editingContractId = id;
+    document.getElementById('contractModal').classList.add('active');
+    document.querySelector('#contractModal .modal-header span').textContent = 'Редактиране на договор';
+    document.getElementById('contractOwner').value = contract.owner || '';
+    document.getElementById('contractPhone').value = contract.phone || '';
+    document.getElementById('contractDate').value = contract.date || '';
+    document.getElementById('contractNotes').value = contract.notes || '';
+
+    if (contract.apartment) {
+        document.getElementById('apartmentBuilding').value = contract.apartment.building || '';
+        populateApartmentsSelect();
+        document.getElementById('apartmentUnit').value = contract.apartment.unit || '';
+        document.getElementById('apartmentValue').value = contract.apartment.value || '';
+    }
+
+    document.getElementById('advancePercent').value = contract.advance ? contract.advance.percent : 30;
+    document.getElementById('advanceDate').value = contract.advance ? contract.advance.date : '';
+    document.getElementById('installment1Percent').value = contract.installment1 ? contract.installment1.percent : 35;
+    document.getElementById('installment1Date').value = contract.installment1 ? contract.installment1.date : '';
+    document.getElementById('installment2Percent').value = contract.installment2 ? contract.installment2.percent : 35;
+    document.getElementById('installment2Date').value = contract.installment2 ? contract.installment2.date : '';
 }
