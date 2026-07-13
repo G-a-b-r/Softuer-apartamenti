@@ -16,8 +16,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('dashboard')">📈 Начало</button>
             <button class="tab-btn" onclick="switchTab('contracts')">📋 Договори</button>
-            <button class="tab-btn" onclick="switchTab('payments')">💳 Плащания</button>
-            <button class="tab-btn" onclick="switchTab('invoices')">🧾 Фактури</button>
+            <button class="tab-btn" onclick="switchTab('payments')">💳 Плащания и фактури</button>
             <button class="tab-btn" onclick="switchTab('settings')">⚙️ Настройки</button>
         </div>
 
@@ -60,6 +59,28 @@
         <div id="contracts" class="tab-content">
             <h2>Управление на договори</h2>
             <button onclick="openContractModal()">➕ Нов договор</button>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <div>
+                    <label>Филтър по сграда:</label>
+                    <select id="contractFilterBuilding" onchange="filterContracts()">
+                        <option value="">Всички сгради</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Филтър по паркомясто:</label>
+                    <select id="contractFilterParking" onchange="filterContracts()">
+                        <option value="">Всички</option>
+                        <option value="with">С паркомясто</option>
+                        <option value="without">Без паркомясто</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Филтър по собственик:</label>
+                    <select id="contractFilterOwner" onchange="filterContracts()">
+                        <option value="">Всички собственици</option>
+                    </select>
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -91,8 +112,9 @@
                     <label>Статус:</label>
                     <select id="paymentFilterStatus" onchange="filterPayments()">
                         <option value="">Всички</option>
-                        <option value="pending">Чакащи</option>
                         <option value="paid">Платени</option>
+                        <option value="pending">Чакащи</option>
+                        <option value="unpaid">Неплатени</option>
                     </select>
                 </div>
             </div>
@@ -101,7 +123,8 @@
                     <tr>
                         <th>Дата</th>
                         <th>Собственик</th>
-                        <th>Апартамент</th>
+                        <th>Имот</th>
+                        <th>Вид имот</th>
                         <th>Тип</th>
                         <th>Сума</th>
                         <th>Статус</th>
@@ -111,9 +134,9 @@
                 <tbody id="paymentsTable">
                 </tbody>
             </table>
-        </div>
 
-        <div id="invoices" class="tab-content">
+            <hr style="margin: 30px 0; border: 1px solid #ddd;">
+
             <h2>Фактури и проформи</h2>
             <button onclick="openInvoiceModal()">➕ Нова фактура</button>
             <div class="form-row" style="margin-bottom: 20px;">
@@ -155,7 +178,7 @@
                 <button onclick="exportToExcel()">📥 Експортирай в Excel</button>
                 <button onclick="document.getElementById('importExcelFile').click()">📤 Импортирай от Excel</button>
             </div>
-            <input type="file" id="importExcelFile" style="display: none;" accept=".csv" onchange="importFromExcel()">
+            <input type="file" id="importExcelFile" style="display: none;" accept=".csv,.xlsx" onchange="importFromExcel()">
 
             <p style="margin-bottom: 10px; margin-top: 20px; font-size: 13px; color: #666;">🔄 <strong>Резервно копие:</strong> Запази всички данни като JSON</p>
             <div class="form-row">
@@ -184,6 +207,10 @@
                     <div class="form-group">
                         <label>Телефон:</label>
                         <input type="tel" id="contractPhone">
+                    </div>
+                    <div class="form-group">
+                        <label>Номер на договора:</label>
+                        <input type="text" id="contractNumber">
                     </div>
                 </div>
 
@@ -216,41 +243,34 @@
 
                 <div class="form-group">
                     <label>Стойност на апартамента:</label>
-                    <input type="number" id="apartmentValue" step="0.01" min="0">
+                    <input type="text" id="apartmentValue" oninput="updateInstallmentAmounts()" onblur="formatPriceInput(this)">
                 </div>
 
                 <h4 style="margin-top: 30px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #764ba2; color: #764ba2;">🅿️ ПАРКОМЯСТО</h4>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Сграда:</label>
-                        <select id="parkingBuilding" onchange="populateParkingSelect()">
-                            <option value="">Без паркомясто</option>
-                            <option value="building_a">Сграда А</option>
-                            <option value="building_b">Сграда Б</option>
-                            <option value="building_c">Сграда В</option>
-                            <option value="building_d">Сграда Г</option>
-                            <option value="building_e">Сграда Д</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Паркомясто:</label>
                         <select id="parkingUnit">
-                            <option value="">Изберете паркомясто</option>
+                            <option value="">Без паркомясто</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Стойност на паркомяста:</label>
-                    <input type="number" id="parkingValue" step="0.01" min="0">
+                    <input type="text" id="parkingValue" oninput="updateInstallmentAmounts()" onblur="formatPriceInput(this)">
                 </div>
 
                 <h4 style="margin-top: 30px; margin-bottom: 10px;">📋 График на плащане</h4>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Аванс (%):</label>
-                        <input type="number" id="advancePercent" value="30" min="0" max="100" step="0.01" required>
+                        <input type="number" id="advancePercent" value="30" min="0" max="100" step="0.01" required oninput="updateInstallmentAmounts()">
+                    </div>
+                    <div class="form-group">
+                        <label>Сума (EUR):</label>
+                        <span id="advanceAmountDisplay" class="amount-display">0.00 EUR</span>
                     </div>
                     <div class="form-group">
                         <label>Дата на авансово плащане:</label>
@@ -261,7 +281,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>1-во доплащане (%):</label>
-                        <input type="number" id="installment1Percent" value="35" min="0" max="100" step="0.01" required>
+                        <input type="number" id="installment1Percent" value="35" min="0" max="100" step="0.01" required oninput="updateInstallmentAmounts()">
+                    </div>
+                    <div class="form-group">
+                        <label>Сума (EUR):</label>
+                        <span id="installment1AmountDisplay" class="amount-display">0.00 EUR</span>
                     </div>
                     <div class="form-group">
                         <label>Дата:</label>
@@ -272,13 +296,21 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>2-ро доплащане (%):</label>
-                        <input type="number" id="installment2Percent" value="35" min="0" max="100" step="0.01" required>
+                        <input type="number" id="installment2Percent" value="35" min="0" max="100" step="0.01" required oninput="updateInstallmentAmounts()">
+                    </div>
+                    <div class="form-group">
+                        <label>Сума (EUR):</label>
+                        <span id="installment2AmountDisplay" class="amount-display">0.00 EUR</span>
                     </div>
                     <div class="form-group">
                         <label>Дата:</label>
                         <input type="date" id="installment2Date" required>
                     </div>
                 </div>
+
+                <div id="extraInstallmentsContainer"></div>
+
+                <button type="button" class="small secondary" onclick="addInstallmentRow()" style="margin-top:10px;">➕ Добави доплащане</button>
 
                 <div class="form-group" style="margin-top: 20px;">
                     <label>Бележки:</label>
@@ -307,6 +339,10 @@
                             <option value="">Изберете договор</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Имот:</label>
+                        <input type="text" id="paymentUnitInfo" readonly style="background: #f0f0f0;" placeholder="Изберете договор">
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -315,19 +351,13 @@
                     </div>
                     <div class="form-group">
                         <label>Сума:</label>
-                        <input type="number" id="paymentAmount" step="0.01" required min="0">
+                        <input type="number" id="paymentAmount" step="0.01" required min="0" >
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Валута:</label>
-                        <select id="paymentCurrency" required>
-                            <option value="BGN">BGN (Български лев)</option>
-                            <option value="EUR">EUR (Евро)</option>
-                            <option value="USD">USD (Долар)</option>
-                            <option value="GBP">GBP (Британски паунд)</option>
-                            <option value="CHF">CHF (Швейцарски франк)</option>
-                        </select>
+                        <input type="text" id="paymentCurrency" value="EUR" readonly style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Тип плащане:</label>
@@ -336,6 +366,16 @@
                             <option value="advance">Аванс</option>
                             <option value="installment1">1-во доплащане</option>
                             <option value="installment2">2-ро доплащане</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>За какво е плащането:</label>
+                        <select id="paymentPropertyType" required>
+                            <option value="">Изберете</option>
+                            <option value="apartment">Апартамент</option>
+                            <option value="parking">Паркомясто</option>
                         </select>
                     </div>
                 </div>
@@ -366,9 +406,57 @@
         <div class="modal-content modal-large">
             <div class="modal-header">
                 <span id="apartmentsModalTitle">Апартаменти</span>
+                <div id="apartmentsModalActions" class="modal-header-actions"></div>
                 <button class="close-btn" onclick="closeApartmentsModal()">✕</button>
             </div>
             <div id="apartmentsList" class="table-container"></div>
+        </div>
+    </div>
+
+    <div id="addUnitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="addUnitModalTitle">Нов имот</span>
+                <button class="close-btn" onclick="closeAddUnitModal()">✕</button>
+            </div>
+            <form onsubmit="saveNewUnit(event)">
+                <input type="hidden" id="addUnitBuilding">
+                <input type="hidden" id="addUnitType">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ID (идентификатор):</label>
+                        <input type="text" id="addUnitId" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Име:</label>
+                        <input type="text" id="addUnitName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Квадратура (м²):</label>
+                        <input type="number" id="addUnitSqm" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Цена (€):</label>
+                        <input type="number" id="addUnitPrice" step="0.01" min="0" required >
+                    </div>
+                </div>
+                <div class="form-group" id="addUnitAptTypeGroup">
+                    <label>Вид апартамент:</label>
+                    <select id="addUnitAptType">
+                        <option value="2 стаен">2 стаен</option>
+                        <option value="3 стаен">3 стаен</option>
+                        <option value="4 стаен">4 стаен</option>
+                        <option value="мезонет">Мезонет</option>
+                        <option value="2 инвалиден">2 инвалиден</option>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button type="submit">💾 Запази</button>
+                    <button type="button" class="secondary" onclick="closeAddUnitModal()">Отказ</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -408,7 +496,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Сума (EUR):</label>
-                        <input type="number" id="invoiceAmount" step="0.01" required min="0">
+                        <input type="number" id="invoiceAmount" step="0.01" required min="0" >
                     </div>
                 </div>
                 <div class="form-group">
@@ -423,6 +511,27 @@
         </div>
     </div>
 
+    <div id="contractDetailModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <span id="contractDetailTitle">Детайли по договор</span>
+                <button class="close-btn" onclick="closeContractDetail()">✕</button>
+            </div>
+            <div id="contractDetailContent"></div>
+        </div>
+    </div>
+
+    <div id="paymentDetailModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <span id="paymentDetailTitle">Детайли по плащане</span>
+                <button class="close-btn" onclick="closePaymentDetail()">✕</button>
+            </div>
+            <div id="paymentDetailContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
