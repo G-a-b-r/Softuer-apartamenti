@@ -24,6 +24,7 @@ header {
     padding: 1rem;
     text-align: center;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    position: relative;
 }
 
 header h1 {
@@ -73,11 +74,12 @@ header .subtitle {
     white-space: nowrap;
     flex: 1;
     min-width: fit-content;
+    color: #000;
 }
 
 .tab-btn.active {
     background: #667eea;
-    color: white;
+    color: #000;
 }
 
 .tab-btn:hover:not(.active) {
@@ -323,6 +325,11 @@ table .actions-cell button {
 
 .modal.active {
     display: flex;
+}
+
+#loginModal.active {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .modal-content {
@@ -1069,4 +1076,54 @@ table {
     box-sizing: border-box;
     min-height: 44px;
     line-height: 1.2;
+}
+
+/* Роли: потребител (само преглед) */
+body.role-user .add-btn,
+body.role-user #settingsAdminSection,
+body.role-user .actions-cell button,
+body.role-user .tab-btn[data-tab="settings"],
+body.role-user .th-actions {
+    display: none !important;
+}
+
+body.role-user .admin-only-block {
+    display: none;
+}
+
+body.role-user #settingsRestrictedMsg {
+    display: block !important;
+}
+
+.auth-user {
+    color: #fff;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+#authButton {
+    color: #fff;
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#authButton .secondary {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#authButton .secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#settings {
+    display: none;
+}
+
+#settings.active {
+    display: block;
 }

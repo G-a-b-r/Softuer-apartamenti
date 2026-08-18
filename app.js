@@ -1,285 +1,3 @@
-class AppData {
-    constructor() {
-        this.contracts = this.loadData('contracts', []);
-        this.payments = this.loadData('payments', []);
-        this.invoices = this.loadData('invoices', []);
-        
-        this.units = this.loadData('units', null);
-        if (!this.units) {
-            this.units = this.generateUnits();
-            this.saveData('units', this.units);
-        }
-    }
-
-    loadData(key, defaultValue) {
-        try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : defaultValue;
-        } catch (e) {
-            console.error('Error loading ' + key + ':', e);
-            return defaultValue;
-        }
-    }
-
-    saveData(key, data) {
-        try {
-            localStorage.setItem(key, JSON.stringify(data));
-        } catch (e) {
-            console.error('Error saving ' + key + ':', e);
-        }
-    }
-
-    generateUnits() {
-        const units = {};
-        const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
-        const building_a_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
-        const building_a_prices = [220165.00, 304411.00, 172375.00, 281024.00, 202404.00, 146365.00, 100261.00, 172826.00, 150536.00, 107414.00, 123794.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 123794.00, 162826.00, 181560.00, 160084.00, 155181.00, 110988.00, 127662.00, 173003.00, 192908.00, 170090.00, 159335.00, 113854.00, 130959.00, 172250.00, 192069.00, 169350.00];
-        const building_a_ids = [
-            '10135.5061.74.1.1', '10135.5061.74.1.2', '10135.5061.74.1.3', '10135.5061.74.1.4', '10135.5061.74.1.5',
-            '10135.5061.74.1.6', '10135.5061.74.1.7', '10135.5061.74.1.8', '10135.5061.74.1.9', '10135.5061.74.1.10',
-            '10135.5061.74.1.11', '10135.5061.74.1.12', '10135.5061.74.1.13', '10135.5061.74.1.14', '10135.5061.74.1.15',
-            '10135.5061.74.1.16', '10135.5061.74.1.17', '10135.5061.74.1.18', '10135.5061.74.1.19', '10135.5061.74.1.20',
-            '10135.5061.74.1.21', '10135.5061.74.1.22', '10135.5061.74.1.23', '10135.5061.74.1.24', '10135.5061.74.1.25',
-            '10135.5061.74.1.26', '10135.5061.74.1.27', '10135.5061.74.1.28', '10135.5061.74.1.29', '10135.5061.74.1.30',
-            '10135.5061.74.1.31', '10135.5061.74.1.32'
-        ];
-        const building_a_types = ['мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен', '2 стаен', '2 инвалиден', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен'];
-        const building_b_ids = [
-            '10135.5061.74.2.1', '10135.5061.74.2.2', '10135.5061.74.2.3', '10135.5061.74.2.4', '10135.5061.74.2.5',
-            '10135.5061.74.2.6', '10135.5061.74.2.7', '10135.5061.74.2.8', '10135.5061.74.2.9', '10135.5061.74.2.10',
-            '10135.5061.74.2.11', '10135.5061.74.2.12', '10135.5061.74.2.13', '10135.5061.74.2.14', '10135.5061.74.2.15',
-            '10135.5061.74.2.16', '10135.5061.74.2.17', '10135.5061.74.2.18', '10135.5061.74.2.19', '10135.5061.74.2.20',
-            '10135.5061.74.2.21', '10135.5061.74.2.22', '10135.5061.74.2.23', '10135.5061.74.2.24', '10135.5061.74.2.25',
-            '10135.5061.74.2.26', '10135.5061.74.2.27', '10135.5061.74.2.28', '10135.5061.74.2.29', '10135.5061.74.2.30',
-            '10135.5061.74.2.31', '10135.5061.74.2.32'
-        ];
-        const building_b_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
-        const building_b_prices = [220165.00, 304411.00, 161601.00, 271959.00, 215898.00, 151086.00, 100261.00, 167425.00, 155392.00, 107414.00, 127662.00, 162826.00, 175887.00, 160084.00, 155181.00, 110988.00, 127662.00, 162826.00, 175887.00, 160084.00, 160031.00, 110988.00, 127662.00, 167914.00, 181560.00, 160084.00, 164163.00, 113854.00, 130959.00, 172250.00, 186420.00, 159388.00];
-        const building_b_types = [
-            'мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен',
-            '3 стаен', '2 инвалид', '3 стаен', '3 стаен', '2 стаен',
-            '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен',
-            '3 стаен', '3 стаен'
-        ];
-        const building_c_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
-        const building_c_prices = [213285.00, 294898.00, 172375.00, 281024.00, 202404.00, 146365.00, 100261.00, 172826.00, 155392.00, 107414.00, 127662.00, 167914.00, 187234.00, 160084.00, 155181.00, 107625.00, 127662.00, 167914.00, 187234.00, 160084.00, 155181.00, 107625.00, 131531.00, 173003.00, 192908.00, 160084.00, 159335.00, 107157.00, 130959.00, 172250.00, 192069.00, 164369.00];
-        const building_c_types = [
-            'мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен',
-            '3 стаен', '2 инвалид', '2 стаен', '3 стаен', '2 стаен',
-            '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен',
-            '3 стаен', '3 стаен'
-        ];
-        const building_c_ids = [
-            '10135.5061.74.3.1', '10135.5061.74.3.2', '10135.5061.74.3.3', '10135.5061.74.3.4', '10135.5061.74.3.5',
-            '10135.5061.74.3.6', '10135.5061.74.3.7', '10135.5061.74.3.8', '10135.5061.74.3.9', '10135.5061.74.3.10',
-            '10135.5061.74.3.11', '10135.5061.74.3.12', '10135.5061.74.3.13', '10135.5061.74.3.14', '10135.5061.74.3.15',
-            '10135.5061.74.3.16', '10135.5061.74.3.17', '10135.5061.74.3.18', '10135.5061.74.3.19', '10135.5061.74.3.20',
-            '10135.5061.74.3.21', '10135.5061.74.3.22', '10135.5061.74.3.23', '10135.5061.74.3.24', '10135.5061.74.3.25',
-            '10135.5061.74.3.26', '10135.5061.74.3.27', '10135.5061.74.3.28', '10135.5061.74.3.29', '10135.5061.74.3.30',
-            '10135.5061.74.3.31', '10135.5061.74.3.32'
-        ];
-        const building_d_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
-        const building_d_prices = [220165.00, 304411.00, 161601.00, 281024.00, 209151.00, 151086.00, 100261.00, 167425.00, 155392.00, 107414.00, 127662.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 127662.00, 162826.00, 181560.00, 160084.00, 155181.00, 107625.00, 127662.00, 167914.00, 187234.00, 165087.00, 164163.00, 113854.00, 130959.00, 167184.00, 186420.00, 164369.00];
-        const building_d_types = [
-            'мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен',
-            '3 стаен', '2 инвалид', '3 стаен', '3 стаен', '2 стаен',
-            '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен',
-            '3 стаен', '3 стаен'
-        ];
-        const building_d_ids = [
-            '10135.5061.74.4.1', '10135.5061.74.4.2', '10135.5061.74.4.3', '10135.5061.74.4.4', '10135.5061.74.4.5',
-            '10135.5061.74.4.6', '10135.5061.74.4.7', '10135.5061.74.4.8', '10135.5061.74.4.9', '10135.5061.74.4.10',
-            '10135.5061.74.4.11', '10135.5061.74.4.12', '10135.5061.74.4.13', '10135.5061.74.4.14', '10135.5061.74.4.15',
-            '10135.5061.74.4.16', '10135.5061.74.4.17', '10135.5061.74.4.18', '10135.5061.74.4.19', '10135.5061.74.4.20',
-            '10135.5061.74.4.21', '10135.5061.74.4.22', '10135.5061.74.4.23', '10135.5061.74.4.24', '10135.5061.74.4.25',
-            '10135.5061.74.4.26', '10135.5061.74.4.27', '10135.5061.74.4.28', '10135.5061.74.4.29', '10135.5061.74.4.30',
-            '10135.5061.74.4.31', '10135.5061.74.4.32'
-        ];
-        const building_e_ids = [
-            '10135.5061.74.5.1', '10135.5061.74.5.2', '10135.5061.74.5.3', '10135.5061.74.5.4', '10135.5061.74.5.5',
-            '10135.5061.74.5.6', '10135.5061.74.5.7', '10135.5061.74.5.8', '10135.5061.74.5.9', '10135.5061.74.5.10',
-            '10135.5061.74.5.11', '10135.5061.74.5.12', '10135.5061.74.5.13', '10135.5061.74.5.14', '10135.5061.74.5.15',
-            '10135.5061.74.5.16', '10135.5061.74.5.17', '10135.5061.74.5.18', '10135.5061.74.5.19', '10135.5061.74.5.20',
-            '10135.5061.74.5.21', '10135.5061.74.5.22', '10135.5061.74.5.23', '10135.5061.74.5.24', '10135.5061.74.5.25',
-            '10135.5061.74.5.26', '10135.5061.74.5.27', '10135.5061.74.5.28', '10135.5061.74.5.29', '10135.5061.74.5.30',
-            '10135.5061.74.5.31', '10135.5061.74.5.32'
-        ];
-        const building_e_sizes = [137.60, 190.26, 107.73, 181.31, 134.94, 94.43, 62.66, 108.02, 97.12, 67.13, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.99, 67.27, 77.37, 101.77, 113.48, 100.05, 96.57, 66.97, 77.03, 101.32, 112.98, 99.62];
-        const building_e_prices = [213285.00, 294898.00, 161601.00, 281024.00, 202404.00, 146365.00, 100261.00, 167425.00, 155392.00, 107414.00, 123794.00, 162826.00, 175887.00, 160084.00, 155181.00, 107625.00, 123794.00, 162826.00, 181560.00, 160084.00, 160031.00, 110988.00, 127662.00, 173003.00, 192908.00, 165087.00, 164163.00, 113854.00, 130959.00, 172250.00, 192069.00, 169350.00];
-        const building_e_types = [
-            'мезонет', 'мезонет', '3 стаен', 'мезонет', '4 стаен',
-            '3 стаен', '2 инвалид', '3 стаен', '3 стаен', '2 стаен',
-            '2 стаен', '3 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '2 стаен', '2 стаен', '3 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '2 стаен', '2 стаен', '3 стаен', '3 стаен',
-            '3 стаен', '3 стаен', '2 стаен', '2 стаен', '3 стаен',
-            '3 стаен', '3 стаен'
-        ];
-        
-        for (let building of buildings) {
-            units[building] = [];
-            const apt_count = building === 'building_a' ? 32 : building === 'building_b' ? 32 : building === 'building_c' ? 32 : building === 'building_d' ? 32 : building === 'building_e' ? 32 : 35;
-            for (let i = 0; i < apt_count; i++) {
-                let size, price, apt_id;
-                if (building === 'building_a' && i < building_a_sizes.length) {
-                    size = building_a_sizes[i];
-                    price = building_a_prices[i];
-                    apt_id = building_a_ids[i];
-                } else if (building === 'building_b' && i < building_b_ids.length) {
-                    size = building_b_sizes[i];
-                    price = building_b_prices[i];
-                    apt_id = building_b_ids[i];
-                } else if (building === 'building_c' && i < building_c_ids.length) {
-                    size = building_c_sizes[i];
-                    price = building_c_prices[i];
-                    apt_id = building_c_ids[i];
-                } else if (building === 'building_d' && i < building_d_ids.length) {
-                    size = building_d_sizes[i];
-                    price = building_d_prices[i];
-                    apt_id = building_d_ids[i];
-                } else if (building === 'building_e' && i < building_e_ids.length) {
-                    size = building_e_sizes[i];
-                    price = building_e_prices[i];
-                    apt_id = building_e_ids[i];
-                } else {
-                    size = 50 + (i * 5) % 100;
-                    price = size * 850;
-                    apt_id = building + '_apt' + (i+1);
-                }
-                units[building].push({
-                    'id': apt_id,
-                    'name': 'Апартамент ' + (i+1),
-                    'type': 'apartment',
-                    'sqm': size,
-                    'price': price,
-                    'status': 'free',
-                    'aptType': (building === 'building_a' && i < building_a_types.length) ? building_a_types[i] : (building === 'building_b' && i < building_b_types.length) ? building_b_types[i] : (building === 'building_c' && i < building_c_types.length) ? building_c_types[i] : (building === 'building_d' && i < building_d_types.length) ? building_d_types[i] : (building === 'building_e' && i < building_e_types.length) ? building_e_types[i] : ''
-                });
-            }
-        }
-        
-        const parkingDisabled = [1, 2, 58, 59, 113, 114, 154, 175];
-        units['parking'] = [];
-        for (let i = 1; i <= 191; i++) {
-            const id = parkingDisabled.includes(i) ? 'ПМ ' + i + ' инвалидно' : 'ПМ ' + i;
-            units['parking'].push({
-                'id': id,
-                'name': 'Паркомясто ' + i,
-                'type': 'parking',
-                'sqm': 12,
-                'price': 8500,
-                'status': 'free'
-            });
-        }
-        
-        return units;
-    }
-
-    addContract(contract) {
-        contract.id = 'contract_' + Date.now();
-        this.contracts.push(contract);
-        this.saveData('contracts', this.contracts);
-        return contract;
-    }
-
-    updateContract(id, data) {
-        const idx = this.contracts.findIndex(c => c.id === id);
-        if (idx === -1) return;
-        this.contracts[idx] = { ...this.contracts[idx], ...data };
-        this.saveData('contracts', this.contracts);
-    }
-
-    deleteContract(id) {
-        this.contracts = this.contracts.filter(c => c.id !== id);
-        this.saveData('contracts', this.contracts);
-    }
-
-    addPayment(payment) {
-        payment.id = 'payment_' + Date.now();
-        this.payments.push(payment);
-        this.saveData('payments', this.payments);
-        return payment;
-    }
-
-    deletePayment(id) {
-        this.payments = this.payments.filter(p => p.id !== id);
-        this.saveData('payments', this.payments);
-    }
-
-    addInvoice(invoice) {
-        invoice.id = 'invoice_' + Date.now();
-        this.invoices.push(invoice);
-        this.saveData('invoices', this.invoices);
-        return invoice;
-    }
-
-    deleteInvoice(id) {
-        this.invoices = this.invoices.filter(i => i.id !== id);
-        this.saveData('invoices', this.invoices);
-    }
-
-    getContractsByBuilding(building) {
-        return this.contracts.filter(c => 
-            (c.apartment && c.apartment.building === building) || (c.parking && c.parking.building === building)
-        );
-    }
-
-    getPaymentsByContract(contractId) {
-        return this.payments.filter(p => p.contractId === contractId);
-    }
-
-    getStats() {
-        const stats = {};
-        const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
-        buildings.forEach(building => {
-            const buildingContracts = this.getContractsByBuilding(building);
-            const totalValue = buildingContracts.reduce((sum, c) => sum + parseMoney(c.totalValue || 0), 0);
-            const totalPaid = buildingContracts.reduce((sum, c) => {
-                const payments = this.getPaymentsByContract(c.id);
-                return sum + payments.reduce((s, p) => s + parseMoney(p.amount || 0), 0);
-            }, 0);
-            
-            const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
-            const contractedIds = new Set(
-                this.contracts
-                    .filter(c => c.apartment && c.apartment.building === building)
-                    .map(c => c.apartment.unit)
-            );
-            const availableUnits = totalUnits - contractedIds.size;
-            
-            stats[building] = {
-                totalUnits: totalUnits,
-                availableUnits: availableUnits,
-                contractCount: buildingContracts.length,
-                totalValue: totalValue,
-                totalPaid: totalPaid,
-                remaining: totalValue - totalPaid
-            };
-        });
-
-        const parkingUnits = this.units['parking'] || [];
-        stats.parking = {
-            total: parkingUnits.length,
-            sold: parkingUnits.filter(u => u.status === 'sold').length,
-            available: parkingUnits.filter(u => u.status !== 'sold').length
-        };
-        
-        return stats;
-    }
-}
-
-let appData = new AppData();
-const buildingNames = { 'building_a': 'Сграда А', 'building_b': 'Сграда Б', 'building_c': 'Сграда В', 'building_d': 'Сграда Г', 'building_e': 'Сграда Д' };
-
 const tabsSentinel = document.createElement('div');
 tabsSentinel.style.height = '1px';
 tabsSentinel.style.width = '1px';
@@ -315,10 +33,15 @@ function autoDecimals(el) {
 }
 
 function switchTab(tabName) {
+    if (tabName === 'settings' && !isAdmin()) {
+        tabName = 'dashboard';
+    }
+
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
+    const target = event && event.target ? event.target : document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+    if (target) target.classList.add('active');
 
     if (tabName === 'dashboard') {
         updateDashboard();
@@ -326,7 +49,9 @@ function switchTab(tabName) {
         renderContracts();
     } else if (tabName === 'payments') {
         renderPayments();
-        renderInvoices();
+        if (document.getElementById('invoicesTable')) renderInvoices();
+    } else if (tabName === 'settings') {
+        renderProfileManagement();
     }
 }
 
@@ -413,13 +138,13 @@ function openBuildingDetail(building) {
         deleteOptions += '<option value="' + originalIndex + '">' + unit.name + ' (' + unit.id + ')</option>';
     });
 
-    document.getElementById('apartmentsModalActions').innerHTML = `
+    document.getElementById('apartmentsModalActions').innerHTML = isAdmin() ? `
         <select id="deleteUnitSelect" class="status-select">
             ${deleteOptions}
         </select>
         <button class="danger small" onclick="deleteSelectedUnit('${building}')">🗑️ Изтрий</button>
         <button class="small" onclick="openAddUnitModal('${building}', 'apartment')">➕ Нов апартамент</button>
-    `;
+    ` : '';
     
     let html = `
         <table>
@@ -441,13 +166,14 @@ function openBuildingDetail(building) {
         const originalIndex = appData.units[building].indexOf(unit);
         const status = unit.status || 'free';
         const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
-        const statusOptions = `
+        const statusLabel = status === 'sold' ? 'Продаден' : status === 'reserved' ? 'Резервиран' : 'Свободен';
+        const statusOptions = isAdmin() ? `
             <select class="status-select ${statusClass}" onchange="updateUnitStatus('${building}', ${originalIndex}, this.value, this)">
                 <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
                 <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
                 <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
             </select>
-        `;
+        ` : '<span class="' + statusClass + '">' + statusLabel + '</span>';
         
         html += `
             <tr>
@@ -456,7 +182,7 @@ function openBuildingDetail(building) {
                 <td data-label="Апартамент">${unit.name}</td>
                 <td data-label="Вид">${unit.aptType || '-'}</td>
                 <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}&nbsp;&nbsp;<button class="small secondary" onclick="editPrice('${building}', ${originalIndex})" title="Редактирай цена">✏️</button></td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'' + building + '\', ' + originalIndex + ')" title="Редактирай цена">✏️</button>' : ''}</td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -477,13 +203,13 @@ function openParkingDetail() {
         deleteOptions += '<option value="' + index + '">' + unit.name + ' (' + unit.id + ')</option>';
     });
 
-    document.getElementById('apartmentsModalActions').innerHTML = `
+    document.getElementById('apartmentsModalActions').innerHTML = isAdmin() ? `
         <select id="deleteUnitSelect" class="status-select">
             ${deleteOptions}
         </select>
         <button class="danger small" onclick="deleteSelectedUnit('parking')">🗑️ Изтрий</button>
         <button class="small" onclick="openAddUnitModal('parking', 'parking')">➕ Ново паркомясто</button>
-    `;
+    ` : '';
     
     let html = `
         <table>
@@ -502,20 +228,21 @@ function openParkingDetail() {
     parkingUnits.forEach((unit, index) => {
         const status = unit.status || 'free';
         const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
-        const statusOptions = `
+        const statusLabel = status === 'sold' ? 'Продаден' : status === 'reserved' ? 'Резервиран' : 'Свободен';
+        const statusOptions = isAdmin() ? `
             <select class="status-select ${statusClass}" onchange="updateUnitStatus('parking', ${index}, this.value, this)">
                 <option value="free" ${status === 'free' ? 'selected' : ''}>Свободен</option>
                 <option value="reserved" ${status === 'reserved' ? 'selected' : ''}>Резервиран</option>
                 <option value="sold" ${status === 'sold' ? 'selected' : ''}>Продаден</option>
             </select>
-        `;
+        ` : '<span class="' + statusClass + '">' + statusLabel + '</span>';
         
         html += `
             <tr>
                 <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
                 <td data-label="Идентификатор">${unit.id}</td>
                 <td data-label="Име">${unit.name}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}&nbsp;&nbsp;<button class="small secondary" onclick="editPrice('parking', ${index})" title="Редактирай цена">✏️</button></td>
+                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'parking\', ' + index + ')" title="Редактирай цена">✏️</button>' : ''}</td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -528,6 +255,7 @@ function openParkingDetail() {
 }
 
 function updateUnitStatus(building, index, status, selectEl) {
+    if (!requireAdmin()) return;
     if (!appData.units[building] || !appData.units[building][index]) return;
     appData.units[building][index].status = status;
     appData.saveData('units', appData.units);
@@ -538,6 +266,7 @@ function updateUnitStatus(building, index, status, selectEl) {
 }
 
 function editPrice(building, index) {
+    if (!requireAdmin()) return;
     if (!appData.units[building] || !appData.units[building][index]) return;
     const unit = appData.units[building][index];
     const newPrice = prompt('Нова цена за ' + unit.name + ' (в €):', unit.price);
@@ -558,6 +287,7 @@ function closeApartmentsModal() {
 }
 
 function deleteSelectedUnit(building) {
+    if (!requireAdmin()) return;
     const select = document.getElementById('deleteUnitSelect');
     if (!select) return;
     const index = parseInt(select.value);
@@ -584,6 +314,7 @@ let currentAddUnitBuilding = '';
 let currentAddUnitType = '';
 
 function openAddUnitModal(building, type) {
+    if (!requireAdmin()) return;
     currentAddUnitBuilding = building;
     currentAddUnitType = type;
     document.getElementById('addUnitBuilding').value = building;
@@ -603,6 +334,7 @@ function closeAddUnitModal() {
 
 function saveNewUnit(event) {
     event.preventDefault();
+    if (!requireAdmin()) return;
     const building = currentAddUnitBuilding;
     const type = currentAddUnitType;
 
@@ -649,6 +381,7 @@ function toggleRowHighlight(row) {
 let editingContractId = null;
 
 function openContractModal() {
+    if (!requireAdmin()) return;
     editingContractId = null;
     document.getElementById('contractModal').classList.add('active');
     document.querySelector('#contractModal .modal-header span').textContent = 'Нов договор';
@@ -735,6 +468,7 @@ function populateParkingSelect() {
 
 function saveContract(event) {
     event.preventDefault();
+    if (!requireAdmin()) return;
     
     const building = document.getElementById('apartmentBuilding').value;
     const unit = document.getElementById('apartmentUnit').value;
@@ -759,6 +493,32 @@ function saveContract(event) {
     if (!hasApartment && !hasParking) {
         alert('Моля, избери апартамент или паркомясто!');
         return;
+    }
+    
+    if (hasApartment) {
+        const selectedUnit = (appData.units[building] || []).find(u => u.id === unit);
+        if (selectedUnit && selectedUnit.status === 'sold') {
+            alert('Грешка: Апартаментът "' + selectedUnit.name + '" е продаден и не може да бъде добавен нов договор!');
+            return;
+        }
+        const existingContract = appData.contracts.find(c => c.id !== editingContractId && c.apartment && c.apartment.building === building && c.apartment.unit === unit);
+        if (existingContract) {
+            alert('Грешка: Вече има договор за този апартамент (' + unit + ') на име ' + existingContract.owner + '!');
+            return;
+        }
+    }
+    
+    if (hasParking) {
+        const selectedUnit = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
+        if (selectedUnit && selectedUnit.status === 'sold') {
+            alert('Грешка: Паркомястото "' + selectedUnit.name + '" е продадено и не може да бъде добавен нов договор!');
+            return;
+        }
+        const existingContract = appData.contracts.find(c => c.id !== editingContractId && c.parking && c.parking.unit === parkingUnit);
+        if (existingContract) {
+            alert('Грешка: Вече има договор за това паркомясто (' + parkingUnit + ') на име ' + existingContract.owner + '!');
+            return;
+        }
     }
     
     const totalValue = apartmentValue + parkingValue;
@@ -802,6 +562,19 @@ function saveContract(event) {
         appData.updateContract(editingContractId, data);
     } else {
         appData.addContract(data);
+        if (hasApartment) {
+            const unitObj = (appData.units[building] || []).find(u => u.id === unit);
+            if (unitObj) {
+                unitObj.status = 'sold';
+            }
+        }
+        if (hasParking) {
+            const unitObj = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
+            if (unitObj) {
+                unitObj.status = 'sold';
+            }
+        }
+        appData.saveData('units', appData.units);
     }
     closeContractModal();
     renderContracts();
@@ -891,10 +664,7 @@ function renderContracts() {
                 <td data-label="Стойност">${formatPrice(parseMoney(contract.totalValue || 0))}</td>
                 <td data-label="Аванс">${contract.advance ? contract.advance.percent : 0}% (${new Date(contract.advance ? contract.advance.date : new Date()).toLocaleDateString('bg-BG')})</td>
                 <td data-label="Доплащания">${(() => { const insts = getAllInstallments(contract).filter(s => s.type !== 'advance' && s.percent > 0); return insts.map(s => s.percent + '%').join(' + '); })()}</td>
-                <td data-label="Действия">
-                    <button class="secondary small" onclick="event.stopPropagation(); editContract('${contract.id}')">✏️</button>
-                    <button class="danger small" onclick="event.stopPropagation(); if(confirm('Сигурен ли си?')) deleteContractItem('${contract.id}')">🗑️</button>
-                </td>
+                ${isAdmin() ? '<td data-label="Действия"><button class="secondary small" onclick="event.stopPropagation(); editContract(\'' + contract.id + '\')">✏️</button> <button class="danger small" onclick="event.stopPropagation(); if(confirm(\'Сигурен ли си?\')) deleteContractItem(\'' + contract.id + '\')">🗑️</button></td>' : ''}
             </tr>
         `;
     });
@@ -1041,6 +811,7 @@ function closeContractDetail() {
 }
 
 function deleteContractItem(id) {
+    if (!requireAdmin()) return;
     appData.deleteContract(id);
     renderContracts();
     populateContractSelects();
@@ -1051,6 +822,7 @@ let editingPaymentId = null;
 let editingInvoiceId = null;
 
 function openPaymentModal() {
+    if (!requireAdmin()) return;
     editingPaymentId = null;
     document.querySelector('#paymentModal .modal-header span').textContent = 'Ново плащане';
     document.getElementById('paymentModal').classList.add('active');
@@ -1061,6 +833,7 @@ function openPaymentModal() {
 }
 
 function editPayment(id) {
+    if (!requireAdmin()) return;
     const payment = appData.payments.find(p => p.id === id);
     if (!payment) return;
 
@@ -1074,6 +847,8 @@ function editPayment(id) {
     document.getElementById('paymentType').value = payment.type || '';
     document.getElementById('paymentPropertyType').value = payment.propertyType || '';
     document.getElementById('paymentMethod').value = payment.method || '';
+    document.getElementById('paymentInvoiceNumber').value = payment.invoiceNumber || '';
+    document.getElementById('paymentInvoiceDate').value = payment.invoiceDate || '';
     document.getElementById('paymentNotes').value = payment.notes || '';
     document.getElementById('paymentModal').classList.add('active');
 }
@@ -1120,6 +895,7 @@ function populateContractSelects() {
 
 function savePayment(event) {
     event.preventDefault();
+    if (!requireAdmin()) return;
     const paymentData = {
         date: document.getElementById('paymentDate').value,
         contractId: document.getElementById('paymentContract').value,
@@ -1128,6 +904,8 @@ function savePayment(event) {
         type: document.getElementById('paymentType').value,
         propertyType: document.getElementById('paymentPropertyType').value,
         method: document.getElementById('paymentMethod').value,
+        invoiceNumber: document.getElementById('paymentInvoiceNumber').value,
+        invoiceDate: document.getElementById('paymentInvoiceDate').value,
         notes: document.getElementById('paymentNotes').value,
         status: 'paid'
     };
@@ -1150,7 +928,7 @@ function savePayment(event) {
 }
 
 function renderPayments(filters) {
-    const propertyTypeNames = { 'apartment': 'Апартамент', 'parking': 'Паркомясто' };
+    const propertyTypeNames = { 'apartment': 'Апартамент', 'parking': 'Паркомясто', 'both': 'Апартамент и паркомясто' };
     let html = '';
 
     const filterBuilding = filters ? filters.building : (document.getElementById('paymentFilterBuilding') ? document.getElementById('paymentFilterBuilding').value : '');
@@ -1176,10 +954,16 @@ function renderPayments(filters) {
             }
         } else {
             propertyType = 'parking';
-            if (contract.parking && contract.parking.unit) {
-                const parkingUnits = appData.units['parking'] || [];
-                const parkingUnit = parkingUnits.find(u => u.id === contract.parking.unit);
-                unitLabel = parkingUnit ? parkingUnit.name : contract.parking.unit;
+        }
+        if (contract.parking && contract.parking.unit) {
+            const parkingUnits = appData.units['parking'] || [];
+            const parkingUnit = parkingUnits.find(u => u.id === contract.parking.unit);
+            const parkingInfo = parkingUnit ? parkingUnit.name : contract.parking.unit;
+            if (propertyType === 'apartment') {
+                propertyType = 'both';
+                unitLabel = unitLabel ? unitLabel + ' + ' + parkingInfo : parkingInfo;
+            } else {
+                unitLabel = parkingInfo;
             }
         }
 
@@ -1264,10 +1048,7 @@ function renderPayments(filters) {
                 <td data-label="Тип">${row.typeName}</td>
                 <td data-label="Сума">${formatPrice(row.scheduledAmount)} EUR</td>
                 <td data-label="Статус"><span class="${statusClass}">${statusText}</span></td>
-<td data-label="Действия">
-                    ${row.status !== 'paid' ? '<button class="small btn-pay" data-contract="' + cid + '" data-type="' + tp + '" data-remaining="' + row.remaining + '" title="Плати">💳 Плати</button>' : ''}
-                    <button class="small secondary btn-edit" onclick="event.stopPropagation(); quickPay('${row.contractId}', '${row.type}', ${row.remaining || 0})" title="Редактирай плащане">✏️</button>
-                </td>
+                ${isAdmin() ? '<td data-label="Действия">' + (row.status !== 'paid' ? '<button class="small btn-pay" data-contract="' + cid + '" data-type="' + tp + '" data-remaining="' + row.remaining + '" title="Плати">💳 Плати</button>' : '') + '<button class="small secondary btn-edit" onclick="event.stopPropagation(); quickPay(\'' + row.contractId + '\', \'' + row.type + '\', ' + (row.remaining || 0) + ')" title="Редактирай плащане">✏️</button></td>' : ''}
             </tr>
         `;
     });
@@ -1300,6 +1081,7 @@ function renderPayments(filters) {
 }
 
 function quickPay(contractId, type, amount) {
+    if (!requireAdmin()) return;
     document.getElementById('paymentContract').value = contractId;
     populatePaymentDetails();
     document.getElementById('paymentType').value = type;
@@ -1310,6 +1092,7 @@ function quickPay(contractId, type, amount) {
 }
 
 function deletePayment(id) {
+    if (!requireAdmin()) return;
     appData.deletePayment(id);
     renderPayments();
 }
@@ -1362,15 +1145,17 @@ function openPaymentDetail(contractId, paymentType) {
 
     let paymentsHistoryHtml = '';
     if (currentSchedule.length > 0) {
-        paymentsHistoryHtml = '<table><thead><tr><th>Дата</th><th>Сума</th><th>Валута</th><th>Метод</th><th>Бележки</th><th>Действия</th></tr></thead><tbody>';
+        paymentsHistoryHtml = '<table><thead><tr><th>Дата</th><th>Сума</th><th>Валута</th><th>Метод</th><th>Номер на фактура</th><th>Дата на фактура</th><th>Бележки</th>' + (isAdmin() ? '<th>Действия</th>' : '') + '</tr></thead><tbody>';
         currentSchedule.forEach(p => {
             paymentsHistoryHtml += `<tr>
                 <td data-label="Дата">${new Date(p.date).toLocaleDateString('bg-BG')}</td>
                 <td data-label="Сума">${formatPrice(p.amount)} EUR</td>
                 <td data-label="Валута">${p.currency || 'EUR'}</td>
                 <td data-label="Метод">${methodNames[p.method] || p.method || ''}</td>
+                <td data-label="Номер на фактура">${p.invoiceNumber || '-'}</td>
+                <td data-label="Дата на фактура">${p.invoiceDate ? new Date(p.invoiceDate).toLocaleDateString('bg-BG') : '-'}</td>
                 <td data-label="Бележки">${p.notes || ''}</td>
-                <td data-label="Действия"><button class="small" onclick="event.stopPropagation(); closePaymentDetail(); editPayment('${p.id}')">✏️</button> <button class="danger small" onclick="event.stopPropagation(); if(confirm('Сигурен ли си?')) { deletePayment('${p.id}'); openPaymentDetail('${contractId}', '${paymentType}'); }">🗑️</button></td>
+                ${isAdmin() ? '<td data-label="Действия"><button class="small" onclick="event.stopPropagation(); closePaymentDetail(); editPayment(\'' + p.id + '\')">✏️</button> <button class="danger small" onclick="event.stopPropagation(); if(confirm(\'Сигурен ли си?\')) { deletePayment(\'' + p.id + '\'); openPaymentDetail(\'' + contractId + '\', \'' + paymentType + '\'); }">🗑️</button></td>' : ''}
             </tr>`;
         });
         paymentsHistoryHtml += '</tbody></table>';
@@ -1464,6 +1249,7 @@ function closePaymentDetail() {
 }
 
 function openInvoiceModal() {
+    if (!requireAdmin()) return;
     document.getElementById('invoiceModal').classList.add('active');
     populateContractSelects();
     document.getElementById('invoiceDate').valueAsDate = new Date();
@@ -1476,6 +1262,7 @@ function closeInvoiceModal() {
 
 function saveInvoice(event) {
     event.preventDefault();
+    if (!requireAdmin()) return;
     const invoice = {
         contractId: document.getElementById('invoiceContract').value,
         number: document.getElementById('invoiceNumber').value,
@@ -1492,6 +1279,7 @@ function saveInvoice(event) {
 }
 
 function renderInvoices(filters) {
+    if (!document.getElementById('invoicesTable')) return;
     const typeNames = { 'proforma': 'Проформа', 'invoice': 'Фактура' };
     let html = '';
 
@@ -1514,7 +1302,7 @@ function renderInvoices(filters) {
                 <td data-label="Собственик">${contract.owner}</td>
                 <td data-label="Тип">${typeNames[invoice.type]}</td>
                 <td data-label="Сума">${formatPrice(invoice.amount)}</td>
-                <td data-label="Действия"><button class="danger small" onclick="if(confirm('Сигурен ли си?')) deleteInvoice('${invoice.id}')">🗑️</button></td>
+                <td data-label="Действия">${isAdmin() ? '<button class="danger small" onclick="if(confirm(\'Сигурен ли си?\')) deleteInvoice(\'' + invoice.id + '\')">🗑️</button>' : '-'}</td>
             </tr>
         `;
     });
@@ -1523,6 +1311,7 @@ function renderInvoices(filters) {
 }
 
 function deleteInvoice(id) {
+    if (!requireAdmin()) return;
     appData.deleteInvoice(id);
     renderInvoices();
 }
@@ -1546,6 +1335,7 @@ function exportData() {
 }
 
 function importData() {
+    if (!requireAdmin()) return;
     const file = document.getElementById('importFile').files[0];
     if (!file) return;
 
@@ -1586,7 +1376,7 @@ function addInstallmentRow(percent, date) {
     div.innerHTML = `
         <div class="form-group">
             <label>${idx + 2}-ро доплащане (%):</label>
-            <input type="number" class="extra-inst-percent" data-idx="${idx}" value="${percent || 35}" min="0" max="100" step="0.01" required oninput="updateInstallmentAmounts()">
+            <input type="number" class="extra-inst-percent" data-idx="${idx}" value="${percent || 35}" min="0" max="100" step="0.0001" required oninput="updateInstallmentAmounts()">
         </div>
         <div class="form-group">
             <label>Сума (EUR):</label>
@@ -1691,61 +1481,39 @@ function updateInstallmentAmounts() {
         if (span) span.textContent = (total * pct / 100).toFixed(2) + ' EUR';
     });
 }
-
-window.addEventListener('load', function() {
-    populateContractSelects();
-    populateContractFilters();
-    updateDashboard();
-
-    const paymentFilterBuilding = document.getElementById('paymentFilterBuilding');
-    if (paymentFilterBuilding) {
-        Object.keys(buildingNames).forEach(key => {
-            const opt = document.createElement('option');
-            opt.value = key;
-            opt.textContent = buildingNames[key];
-            paymentFilterBuilding.appendChild(opt);
-        });
-    }
-    
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('input[type="date"]').forEach(input => {
-        if (!input.value) input.value = today;
-    });
-});
-
 function editContract(id) {
+    if (!requireAdmin()) return;
     const contract = appData.contracts.find(c => c.id === id);
     if (!contract) return;
 
     editingContractId = id;
-    document.getElementById('contractModal').classList.add('active');
     document.querySelector('#contractModal .modal-header span').textContent = 'Редактиране на договор';
+    document.getElementById('contractModal').classList.add('active');
+    document.getElementById('contractForm').reset();
+
     document.getElementById('contractOwner').value = contract.owner || '';
     document.getElementById('contractPhone').value = contract.phone || '';
     document.getElementById('contractNumber').value = contract.number || '';
     document.getElementById('contractDate').value = contract.date || '';
-    document.getElementById('contractNotes').value = contract.notes || '';
 
-    if (contract.apartment) {
-        document.getElementById('apartmentBuilding').value = contract.apartment.building || '';
-        populateApartmentsSelect();
-        document.getElementById('apartmentUnit').value = contract.apartment.unit || '';
-        document.getElementById('apartmentValue').value = formatPrice(contract.apartment.value || 0);
-    }
+    document.getElementById('apartmentBuilding').value = contract.apartment ? contract.apartment.building : '';
+    populateApartmentsSelect();
+    document.getElementById('apartmentUnit').value = contract.apartment ? contract.apartment.unit : '';
+    document.getElementById('apartmentValue').value = contract.apartment ? formatPrice(contract.apartment.value) : '';
 
-    if (contract.parking) {
-        populateParkingSelect();
-        document.getElementById('parkingValue').value = formatPrice(contract.parking.value || 0);
-    }
+    document.getElementById('parkingUnit').value = contract.parking ? contract.parking.unit : '';
+    document.getElementById('parkingValue').value = contract.parking ? formatPrice(contract.parking.value) : '';
 
-    document.getElementById('advancePercent').value = contract.advance ? contract.advance.percent : 30;
+    document.getElementById('advancePercent').value = contract.advance ? contract.advance.percent : '';
     document.getElementById('advanceDate').value = contract.advance ? contract.advance.date : '';
-    document.getElementById('installment1Percent').value = contract.installment1 ? contract.installment1.percent : 35;
+    document.getElementById('installment1Percent').value = contract.installment1 ? contract.installment1.percent : '';
     document.getElementById('installment1Date').value = contract.installment1 ? contract.installment1.date : '';
-    document.getElementById('installment2Percent').value = contract.installment2 ? contract.installment2.percent : 35;
+    document.getElementById('installment2Percent').value = contract.installment2 ? contract.installment2.percent : '';
     document.getElementById('installment2Date').value = contract.installment2 ? contract.installment2.date : '';
 
-    loadExtraInstallments(contract.extraInstallments || []);
+    loadExtraInstallments(contract.extraInstallments);
+    document.getElementById('contractNotes').value = contract.notes || '';
+
     updateInstallmentAmounts();
 }
 
@@ -1759,148 +1527,112 @@ function filterInvoices() {
 
 function populatePaymentDetails() {
     const contractId = document.getElementById('paymentContract').value;
-    const amountInput = document.getElementById('paymentAmount');
-    const typeSelect = document.getElementById('paymentType');
-    const propertyTypeSelect = document.getElementById('paymentPropertyType');
-    const unitInfoInput = document.getElementById('paymentUnitInfo');
-    if (!contractId) {
-        amountInput.value = '';
-        typeSelect.value = '';
-        propertyTypeSelect.value = '';
-        unitInfoInput.value = '';
+    const contract = appData.contracts.find(c => c.id === contractId);
+    if (!contract) {
+        document.getElementById('paymentUnitInfo').value = '';
         return;
     }
 
-    const contract = appData.contracts.find(c => c.id === contractId);
-    if (!contract) return;
-
-    const typeNames = getInstallmentTypeNames(contract);
-
-    let unitName = '';
-    if (contract.apartment && contract.apartment.building) {
-        propertyTypeSelect.value = 'apartment';
-        const building = contract.apartment.building;
-        const unitId = contract.apartment.unit;
-        const unit = appData.units[building] ? appData.units[building].find(u => u.id === unitId) : null;
-        unitName = unit ? unit.name : '';
-    } else {
-        propertyTypeSelect.value = 'parking';
-        if (contract.parking && contract.parking.unit) {
-            const parkingUnits = appData.units['parking'] || [];
-            const parkingUnit = parkingUnits.find(u => u.id === contract.parking.unit);
-            unitName = parkingUnit ? parkingUnit.name : contract.parking.unit;
-        }
-    }
-    unitInfoInput.value = unitName;
-
     const totalValue = parseMoney(contract.totalValue || 0);
     const payments = appData.getPaymentsByContract(contractId);
-    const totalPaid = payments.reduce((sum, p) => sum + parseMoney(p.amount || 0), 0);
-    const remaining = totalValue - totalPaid;
 
-    amountInput.value = remaining > 0 ? remaining.toFixed(2) : '';
+    let buildingName = '';
+    let unitName = '';
+    let parkingName = '';
+    if (contract.apartment && contract.apartment.building) {
+        buildingName = buildingNames[contract.apartment.building] || '';
+        const u = (appData.units[contract.apartment.building] || []).find(u => u.id === contract.apartment.unit);
+        if (u) unitName = u.name;
+    }
+    if (contract.parking && contract.parking.unit) {
+        const u = (appData.units['parking'] || []).find(u => u.id === contract.parking.unit);
+        if (u) parkingName = u.name;
+    }
 
-    const allInsts = getAllInstallments(contract);
+    let info = contract.owner;
+    if (buildingName && unitName) info += ' — ' + buildingName + ' ' + unitName;
+    if (parkingName) info += (info ? ', ' : '') + 'Паркомясто ' + parkingName;
+    document.getElementById('paymentUnitInfo').value = info;
+
+    const typeNames = getInstallmentTypeNames(contract);
+    const typeSelect = document.getElementById('paymentType');
     typeSelect.innerHTML = '<option value="">Изберете</option>';
-    allInsts.forEach(sch => {
-        if (sch.percent <= 0) return;
-        const opt = document.createElement('option');
-        opt.value = sch.type;
-        opt.textContent = typeNames[sch.type] || sch.type;
-        typeSelect.appendChild(opt);
+    const insts = getAllInstallments(contract);
+    insts.forEach(sch => {
+        if (sch.percent > 0) {
+            typeSelect.innerHTML += '<option value="' + sch.type + '">' + (typeNames[sch.type] || sch.type) + '</option>';
+        }
     });
 
-    let suggestedType = '';
-    let suggestedAmount = 0;
-    for (const sch of allInsts) {
-        if (sch.percent <= 0) continue;
-        const schAmount = totalValue * sch.percent / 100;
-        const schPaid = payments.filter(p => p.type === sch.type).reduce((s, p) => s + parseMoney(p.amount || 0), 0);
-        if (schPaid < schAmount) {
-            suggestedType = sch.type;
-            suggestedAmount = schAmount - schPaid;
-            break;
-        }
+    const propertySelect = document.getElementById('paymentPropertyType');
+    propertySelect.innerHTML = '<option value="">Изберете</option>';
+    if (contract.apartment && contract.apartment.building && contract.parking && contract.parking.unit) {
+        propertySelect.innerHTML += '<option value="apartment">Апартамент</option><option value="parking">Паркомясто</option><option value="both">Апартамент и паркомясто</option>';
+    } else if (contract.apartment && contract.apartment.building) {
+        propertySelect.innerHTML += '<option value="apartment">Апартамент</option>';
+    } else if (contract.parking && contract.parking.unit) {
+        propertySelect.innerHTML += '<option value="parking">Паркомясто</option>';
     }
-    if (suggestedType) {
-        typeSelect.value = suggestedType;
-        amountInput.value = suggestedAmount.toFixed(2);
+
+    document.getElementById('paymentCurrency').value = 'EUR';
+
+    const firstType = typeSelect.options.length > 1 ? typeSelect.options[1].value : '';
+    if (firstType) {
+        const sch = insts.find(s => s.type === firstType);
+        const scheduled = sch ? totalValue * sch.percent / 100 : 0;
+        const paid = payments.filter(p => p.type === firstType).reduce((s, p) => s + parseMoney(p.amount || 0), 0);
+        const remaining = scheduled - paid;
+        document.getElementById('paymentAmount').value = remaining > 0 ? remaining.toFixed(2) : '';
     }
 }
 
 function exportToExcel() {
-    const buildings = ['building_a', 'building_b', 'building_c', 'building_d', 'building_e'];
+    if (!requireAdmin()) return;
     const header = [
-        'Тип запис', 'Сграда', 'Имот', 'Собственик', 'Телефон',
-        'Дата', 'Обща стойност',
-        'Аванс %', 'Аванс дата', '1-во доп %', '1-во доп дата', '2-ро доп %', '2-ро доп дата',
-        'Вид плащане', 'Сума плащане', 'Валута', 'Метод',
-        'Фактура номер', 'Тип фактура',
-        'ID имот', 'Тип имот', 'Квадратура', 'Цена',
-        'Статус', 'Бележки/Описание'
+        'Сграда', 'Договор №', 'Имот', 'Собственик', 'Телефон',
+        'Дата', 'Стойност (EUR)',
+        'Аванс %', 'Аванс сума', '1-во доп. %', '1-во доп. сума', '2-ро доп. %', '2-ро доп. сума',
+        '3-то доп. %', '3-то доп. сума', '4-то доп. %', '4-то доп. сума', '5-то доп. %', '5-то доп. сума',
+        'Ап. №', 'Вид', 'Кв.м', 'Цена (EUR)', 'Статус', 'Бележки'
     ];
-
-    const methodNames = { 'cash': 'Брой', 'bank': 'Банков превод', 'check': 'Чек' };
-    const invTypeNames = { 'proforma': 'Проформа', 'invoice': 'Фактура' };
-
-    const rows = [];
-    rows.push(header);
+    const rows = [header];
 
     appData.contracts.forEach(contract => {
-        const bKey = contract.apartment ? contract.apartment.building : '';
-        const unitId = contract.apartment ? contract.apartment.unit : '';
-        const unit = bKey && appData.units[bKey] ? appData.units[bKey].find(u => u.id === unitId) : null;
-        const building = bKey ? buildingNames[bKey] || '' : '';
-        const unitName = unit ? unit.name : '';
-        rows.push([
-            'Договор', building, unitName,
-            contract.owner || '', contract.phone || '',
-            contract.date || '', contract.totalValue || 0,
-            contract.advance ? contract.advance.percent : '', contract.advance ? contract.advance.date : '',
-            contract.installment1 ? contract.installment1.percent : '', contract.installment1 ? contract.installment1.date : '',
-            contract.installment2 ? contract.installment2.percent : '', contract.installment2 ? contract.installment2.date : '',
-            '', '', '', '',
-            '', '',
-            '', '', '', '',
-            '', (contract.notes || '').replace(/;/g, ',')
-        ]);
-
-        const typeNames = getInstallmentTypeNames(contract);
-        const relatedPayments = appData.payments.filter(p => p.contractId === contract.id);
-        relatedPayments.forEach(payment => {
-            rows.push([
-                'Плащане', building, unitName,
-                contract.owner || '', '',
-                payment.date || '', '',
-                '', '', '', '', '', '',
-                typeNames[payment.type] || payment.type || '', payment.amount || 0, payment.currency || 'EUR', methodNames[payment.method] || payment.method || '',
-                '', '',
-                '', '', '', '',
-                payment.status || 'paid', (payment.notes || '').replace(/;/g, ',')
-            ]);
-        });
-
-        const relatedInvoices = appData.invoices.filter(inv => inv.contractId === contract.id);
-        relatedInvoices.forEach(invoice => {
-            rows.push([
-                'Фактура', building, unitName,
-                contract.owner || '', '',
-                invoice.date || '', '',
-                '', '', '', '', '', '',
-                '', '', '', '',
-                invoice.number || '', invTypeNames[invoice.type] || invoice.type || '',
-                '', '', '', '',
-                '', (invoice.description || '').replace(/;/g, ',')
-            ]);
-        });
+        const totalValue = parseMoney(contract.totalValue || 0);
+        let buildingName = '';
+        let unitName = '';
+        if (contract.apartment && contract.apartment.building) {
+            buildingName = buildingNames[contract.apartment.building] || '';
+            const u = (appData.units[contract.apartment.building] || []).find(u => u.id === contract.apartment.unit);
+            if (u) unitName = u.name;
+        } else if (contract.parking && contract.parking.unit) {
+            const u = (appData.units['parking'] || []).find(u => u.id === contract.parking.unit);
+            if (u) unitName = 'Паркомясто ' + u.name;
+        }
+        const row = new Array(25).fill('');
+        row[0] = buildingName;
+        row[1] = contract.number || '';
+        row[2] = unitName;
+        row[3] = contract.owner || '';
+        row[4] = contract.phone || '';
+        row[5] = contract.date || '';
+        row[6] = totalValue || '';
+        const insts = getAllInstallments(contract);
+        for (let i = 0; i < 6; i++) {
+            const sch = insts[i];
+            if (sch && sch.percent > 0) {
+                row[7 + i * 2] = sch.percent;
+                row[8 + i * 2] = (totalValue * sch.percent / 100).toFixed(2);
+            }
+        }
+        row[24] = contract.notes || '';
+        rows.push(row);
     });
 
-    buildings.forEach(building => {
-        const units = appData.units[building] || [];
-        units.forEach(unit => {
+    Object.keys(buildingNames).forEach(building => {
+        (appData.units[building] || []).forEach(unit => {
             rows.push([
-                'Имот', buildingNames[building] || building, '',
-                '', '',
+                buildingNames[building], '', '', '', '',
                 '', '',
                 '', '', '', '', '', '',
                 '', '', '', '',
@@ -1939,43 +1671,34 @@ function exportToExcel() {
         { wch: 14 }, { wch: 30 }
     ];
 
-    const numRows = rows.length;
-    const numCols = header.length;
-
     const headerFill = { patternType: 'solid', fgColor: { rgb: '4472C4' } };
     const headerFont = { bold: true, color: { rgb: 'FFFFFF' }, sz: 11, name: 'Calibri' };
     const headerAlign = { horizontal: 'center', vertical: 'center', wrapText: true };
-
     const cellFont = { sz: 10, name: 'Calibri' };
     const cellAlign = { vertical: 'center' };
-    const thinBorder = {
-        top: { style: 'thin', color: { rgb: 'B4C6E7' } },
-        bottom: { style: 'thin', color: { rgb: 'B4C6E7' } },
-        left: { style: 'thin', color: { rgb: 'B4C6E7' } },
-        right: { style: 'thin', color: { rgb: 'B4C6E7' } }
-    };
+    const numRows = rows.length;
+    const numCols = header.length;
 
     for (let C = 0; C < numCols; C++) {
         const addr = XLSX.utils.encode_cell({ r: 0, c: C });
         if (!ws[addr]) ws[addr] = { v: header[C], t: 's' };
-        ws[addr].s = { fill: headerFill, font: headerFont, alignment: headerAlign, border: thinBorder };
+        ws[addr].s = { fill: headerFill, font: headerFont, alignment: headerAlign };
     }
-
     for (let R = 1; R < numRows; R++) {
         for (let C = 0; C < numCols; C++) {
             const addr = XLSX.utils.encode_cell({ r: R, c: C });
             if (!ws[addr]) continue;
-            ws[addr].s = { font: cellFont, alignment: cellAlign, border: thinBorder };
+            ws[addr].s = { font: cellFont, alignment: cellAlign };
         }
     }
 
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: numRows - 1, c: numCols - 1 } }) };
-
     XLSX.utils.book_append_sheet(wb, ws, 'Данни');
     XLSX.writeFile(wb, 'apartments_data_' + new Date().getTime() + '.xlsx');
 }
 
 function importFromExcel() {
+    if (!requireAdmin()) return;
     const file = document.getElementById('importExcelFile').files[0];
     if (!file) return;
 
@@ -2065,6 +1788,7 @@ function importFromExcel() {
 }
 
 function initializeSampleData() {
+    if (!requireAdmin()) return;
     if (!confirm('Това ще създаде примерни данни. Сигурен ли си?')) return;
 
     const sampleOwners = [
