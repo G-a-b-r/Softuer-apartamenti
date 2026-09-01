@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.db
+backend/.env
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Vercel local
+.vercel/

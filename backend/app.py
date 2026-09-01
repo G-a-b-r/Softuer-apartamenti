@@ -13,7 +13,7 @@ from seed import BUILDINGS, generate_units
 
 FRONTEND_DIR = os.path.dirname(BASE_DIR)
 VALID_BUILDINGS = set(BUILDINGS) | {'parking'}
-ALLOWED_STATIC = {'index.html', 'style.css', 'app.js', 'auth.js', 'data.js', 'main.js'}
+ALLOWED_STATIC = {'index.html', 'style.css', 'app.js', 'auth.js', 'data.js', 'main.js', 'config.js', 'favicon.ico'}
 
 app = Flask(__name__, static_folder=None)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
