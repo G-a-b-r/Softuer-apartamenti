@@ -1,4 +1,5 @@
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from functools import wraps
@@ -763,9 +764,31 @@ def frontend_file(filename):
 
 # ---------------------------------------------------------------- startup
 
-with app.app_context():
-    db.create_all()
-    seed_units_if_empty()
+_schema_lock = threading.Lock()
+_schema_ready = False
+
+
+def ensure_schema():
+    global _schema_ready
+    if _schema_ready:
+        return
+    with _schema_lock:
+        if _schema_ready:
+            return
+        db.create_all()
+        seed_units_if_empty()
+        _schema_ready = True
+
+
+@app.before_request
+def ensure_schema_before_request():
+    try:
+        ensure_schema()
+    except Exception as exc:
+        return jsonify({
+            'error': 'Базата данни не е налична. Провери дали DATABASE_URL е зададен в настройките и дали връзката е активна.'
+        }), 503
+    return None
 
 
 if __name__ == '__main__':
