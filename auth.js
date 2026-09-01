@@ -73,6 +73,17 @@ function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
 }
 
+function togglePassword(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁';
+    }
+}
+
 function setLoginError(msg) {
     const el = document.getElementById('loginError');
     if (el) el.textContent = msg;
