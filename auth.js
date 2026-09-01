@@ -1,22 +1,22 @@
 function getSession() {
     try {
-        return localStorage.getItem('currentUser');
+        return JSON.parse(sessionStorage.getItem('session') || 'null');
     } catch (e) {
         return null;
     }
 }
 
-function setSession(id) {
+function setSession(sess) {
     try {
-        if (id) localStorage.setItem('currentUser', id);
-        else localStorage.removeItem('currentUser');
+        if (sess) sessionStorage.setItem('session', JSON.stringify(sess));
+        else sessionStorage.removeItem('session');
     } catch (e) {}
 }
 
 function getCurrentUser() {
-    const id = getSession();
-    if (!id) return null;
-    return appData.profiles.find(p => p.id === id) || null;
+    const sess = getSession();
+    if (!sess) return null;
+    return { id: sess.id, username: sess.username, role: sess.role };
 }
 
 function isLoggedIn() {
@@ -73,48 +73,61 @@ function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
 }
 
-function doLogin() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const profile = appData.profiles.find(p => p.username.toLowerCase() === username.toLowerCase() && p.password === password);
-    if (!profile) {
-        document.getElementById('loginError').textContent = 'Грешни потребителско име или парола!';
-        return;
-    }
-    setSession(profile.id);
-    closeLoginModal();
-    applyPermissions();
-    renderAuthButton();
-    renderProfileManagement();
-    alert('✅ Здравей, ' + profile.username + '! Влязъл си като ' + (profile.role === 'admin' ? 'администратор' : 'потребител') + '.');
+function setLoginError(msg) {
+    const el = document.getElementById('loginError');
+    if (el) el.textContent = msg;
 }
 
-function doRegister() {
+async function doLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!username || !password) {
+        setLoginError('Моля, попълни потребителско име и парола!');
+        return;
+    }
+    try {
+        const res = await api('/login', {
+            method: 'POST',
+            body: JSON.stringify({ username: username, password: password })
+        });
+        setSession({ id: res.id, username: res.username, role: res.role, token: res.token });
+        closeLoginModal();
+        await refreshAll();
+        renderAuthButton();
+        renderProfileManagement();
+        alert('✅ Здравей, ' + res.username + '! Влязъл си като ' + (res.role === 'admin' ? 'администратор' : 'потребител') + '.');
+    } catch (e) {
+        setLoginError(e.message);
+    }
+}
+
+async function doRegister() {
     const username = document.getElementById('regUsername').value.trim();
     const password = document.getElementById('regPassword').value;
     if (!username || !password) {
-        document.getElementById('loginError').textContent = 'Моля, попълни потребителско име и парола!';
+        setLoginError('Моля, попълни потребителско име и парола!');
         return;
     }
-    if (appData.profiles.some(p => p.username.toLowerCase() === username.toLowerCase())) {
-        document.getElementById('loginError').textContent = 'Това потребителско име вече съществува!';
-        return;
+    try {
+        const res = await api('/register', {
+            method: 'POST',
+            body: JSON.stringify({ username: username, password: password })
+        });
+        setSession({ id: res.id, username: res.username, role: res.role, token: res.token });
+        closeLoginModal();
+        await refreshAll();
+        renderAuthButton();
+        renderProfileManagement();
+        alert('✅ Профилът е създаден! Ти си ' + (res.role === 'admin' ? 'първият потребител и автоматично стана АДМИНИСТРАТОР.' : 'потребител с достъп само за преглед.') + '');
+    } catch (e) {
+        setLoginError(e.message);
     }
-    const isFirst = appData.profiles.length === 0;
-    const profile = appData.addProfile({
-        username: username,
-        password: password,
-        role: isFirst ? 'admin' : 'user'
-    });
-    setSession(profile.id);
-    closeLoginModal();
-    applyPermissions();
-    renderAuthButton();
-    renderProfileManagement();
-    alert('✅ Профилът е създаден! Ти си ' + (isFirst ? 'първият потребител и автоматично стана АДМИНИСТРАТОР.' : 'потребител с достъп само за преглед.') + '');
 }
 
 function logout() {
+    try {
+        api('/logout', { method: 'POST', body: '{}' }).catch(function () {});
+    } catch (e) {}
     setSession(null);
     applyPermissions();
     renderAuthButton();
@@ -142,16 +155,20 @@ function renderProfileManagement() {
     container.innerHTML = html;
 }
 
-function changeUserRole(profileId, role) {
+async function changeUserRole(profileId, role) {
     if (!isAdmin()) return;
-    const profile = appData.profiles.find(p => p.id === profileId);
-    if (!profile) return;
-    const current = getCurrentUser();
-    if (current && current.id === profileId) return;
-    profile.role = role;
-    appData.saveData('profiles', appData.profiles);
-    alert('✅ Ролята на "' + profile.username + '" е променена на ' + (role === 'admin' ? 'администратор' : 'потребител') + '.');
-    renderProfileManagement();
+    try {
+        await api('/profiles/' + profileId + '/role', {
+            method: 'PUT',
+            body: JSON.stringify({ role: role })
+        });
+        const profile = appData.profiles.find(p => p.id === profileId);
+        if (profile) profile.role = role;
+        alert('✅ Ролята е променена на ' + (role === 'admin' ? 'администратор' : 'потребител') + '.');
+        renderProfileManagement();
+    } catch (e) {
+        alert('❌ ' + e.message);
+    }
 }
 
 function applyPermissions() {

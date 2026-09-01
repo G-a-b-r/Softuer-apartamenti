@@ -332,7 +332,7 @@ function closeAddUnitModal() {
     document.getElementById('addUnitModal').classList.remove('active');
 }
 
-function saveNewUnit(event) {
+async function saveNewUnit(event) {
     event.preventDefault();
     if (!requireAdmin()) return;
     const building = currentAddUnitBuilding;
@@ -361,14 +361,24 @@ function saveNewUnit(event) {
         return;
     }
 
-    appData.units[building].push(newUnit);
-    appData.saveData('units', appData.units);
-    closeAddUnitModal();
+    if (!beginSave(event)) return;
+    try {
+        appData.units[building].push(newUnit);
+        await appData.saveData('units', appData.units);
+        closeAddUnitModal();
 
-    if (type === 'parking') {
-        openParkingDetail();
-    } else {
-        openBuildingDetail(building);
+        if (type === 'parking') {
+            openParkingDetail();
+        } else {
+            openBuildingDetail(building);
+        }
+    } catch (e) {
+        appData.units[building] = (appData.units[building] || []).filter(u => u.id !== newUnit.id);
+        if (appData._unitSync[building]) {
+            appData._unitSync[building] = appData._unitSync[building].filter(u => u.id !== newUnit.id);
+        }
+    } finally {
+        endSave(event);
     }
 }
 
@@ -466,7 +476,7 @@ function populateParkingSelect() {
     });
 }
 
-function saveContract(event) {
+async function saveContract(event) {
     event.preventDefault();
     if (!requireAdmin()) return;
     
@@ -558,29 +568,35 @@ function saveContract(event) {
         data.parking = { unit: parkingUnit, value: parkingValue };
     }
 
-    if (editingContractId) {
-        appData.updateContract(editingContractId, data);
-    } else {
-        appData.addContract(data);
-        if (hasApartment) {
-            const unitObj = (appData.units[building] || []).find(u => u.id === unit);
-            if (unitObj) {
-                unitObj.status = 'sold';
+    if (!beginSave(event)) return;
+    try {
+        if (editingContractId) {
+            await appData.updateContract(editingContractId, data);
+        } else {
+            await appData.addContract(data);
+            if (hasApartment) {
+                const unitObj = (appData.units[building] || []).find(u => u.id === unit);
+                if (unitObj) {
+                    unitObj.status = 'sold';
+                }
             }
-        }
-        if (hasParking) {
-            const unitObj = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
-            if (unitObj) {
-                unitObj.status = 'sold';
+            if (hasParking) {
+                const unitObj = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
+                if (unitObj) {
+                    unitObj.status = 'sold';
+                }
             }
+            await appData.saveData('units', appData.units);
         }
-        appData.saveData('units', appData.units);
+        closeContractModal();
+        renderContracts();
+        populateContractSelects();
+        populateContractFilters();
+        alert('✅ Договорът е запазен успешно!');
+    } catch (e) {
+    } finally {
+        endSave(event);
     }
-    closeContractModal();
-    renderContracts();
-    populateContractSelects();
-    populateContractFilters();
-    alert('✅ Договорът е запазен успешно!');
 }
 
 function filterContracts() {
@@ -893,7 +909,7 @@ function populateContractSelects() {
     }
 }
 
-function savePayment(event) {
+async function savePayment(event) {
     event.preventDefault();
     if (!requireAdmin()) return;
     const paymentData = {
@@ -910,21 +926,27 @@ function savePayment(event) {
         status: 'paid'
     };
 
-    if (editingPaymentId) {
-        const payment = appData.payments.find(p => p.id === editingPaymentId);
-        if (payment) {
-            Object.assign(payment, paymentData);
-            appData.saveData('payments', appData.payments);
+    if (!beginSave(event)) return;
+    try {
+        if (editingPaymentId) {
+            const payment = appData.payments.find(p => p.id === editingPaymentId);
+            if (payment) {
+                Object.assign(payment, paymentData);
+                await appData.updatePayment(editingPaymentId, paymentData);
+            }
+            alert('✅ Плащането е редактирано успешно!');
+        } else {
+            await appData.addPayment(paymentData);
+            alert('✅ Плащане запазено успешно!');
         }
-        alert('✅ Плащането е редактирано успешно!');
-    } else {
-        appData.addPayment(paymentData);
-        alert('✅ Плащане запазено успешно!');
-    }
 
-    editingPaymentId = null;
-    closePaymentModal();
-    renderPayments();
+        editingPaymentId = null;
+        closePaymentModal();
+        renderPayments();
+    } catch (e) {
+    } finally {
+        endSave(event);
+    }
 }
 
 function renderPayments(filters) {
@@ -1260,7 +1282,7 @@ function closeInvoiceModal() {
     document.getElementById('invoiceModal').classList.remove('active');
 }
 
-function saveInvoice(event) {
+async function saveInvoice(event) {
     event.preventDefault();
     if (!requireAdmin()) return;
     const invoice = {
@@ -1272,10 +1294,16 @@ function saveInvoice(event) {
         description: document.getElementById('invoiceDescription').value
     };
 
-    appData.addInvoice(invoice);
-    closeInvoiceModal();
-    renderInvoices();
-    alert('✅ Фактура запазена успешно!');
+    if (!beginSave(event)) return;
+    try {
+        await appData.addInvoice(invoice);
+        closeInvoiceModal();
+        renderInvoices();
+        alert('✅ Фактура запазена успешно!');
+    } catch (e) {
+    } finally {
+        endSave(event);
+    }
 }
 
 function renderInvoices(filters) {
@@ -1343,20 +1371,12 @@ function importData() {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            if (data.contracts) appData.contracts = data.contracts;
-            if (data.payments) appData.payments = data.payments;
-            if (data.invoices) appData.invoices = data.invoices;
-            if (data.units) {
-                appData.units = data.units;
-                appData.saveData('units', appData.units);
-            }
-
-            appData.saveData('contracts', appData.contracts);
-            appData.saveData('payments', appData.payments);
-            appData.saveData('invoices', appData.invoices);
-
-            alert('✅ Данни импортирани успешно!');
-            location.reload();
+            appData.importAll(data).then(function(res) {
+                alert('✅ Данни импортирани успешно!\nДоговори: ' + (res.contracts || 0) + ', Плащания: ' + (res.payments || 0) + ', Фактури: ' + (res.invoices || 0));
+                location.reload();
+            }).catch(function(error) {
+                alert('❌ Грешка при импортиране: ' + error.message);
+            });
         } catch (error) {
             alert('❌ Грешка при импортиране: ' + error.message);
         }
@@ -1586,8 +1606,31 @@ function populatePaymentDetails() {
     }
 }
 
-function exportToExcel() {
+let xlsxLoadingPromise = null;
+function loadXlsxLib() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxLoadingPromise) return xlsxLoadingPromise;
+    xlsxLoadingPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+        s.onload = function() { resolve(window.XLSX); };
+        s.onerror = function() {
+            xlsxLoadingPromise = null;
+            reject(new Error('Неуспешно зареждане на библиотеката за Excel (провери интернет връзката).'));
+        };
+        document.head.appendChild(s);
+    });
+    return xlsxLoadingPromise;
+}
+
+async function exportToExcel() {
     if (!requireAdmin()) return;
+    try {
+        await loadXlsxLib();
+    } catch (e) {
+        alert('❌ ' + e.message);
+        return;
+    }
     const header = [
         'Сграда', 'Договор №', 'Имот', 'Собственик', 'Телефон',
         'Дата', 'Стойност (EUR)',
@@ -1710,6 +1753,9 @@ function importFromExcel() {
 
             let currentSection = '';
             let imported = { contracts: 0, payments: 0, invoices: 0 };
+            const localContracts = [];
+            const localPayments = [];
+            const localInvoices = [];
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -1738,13 +1784,14 @@ function importFromExcel() {
                         installment2: { percent: parseMoney(parts[10]) || 35, date: parts[11] || '' },
                         notes: parts[12] || ''
                     };
-                    appData.addContract(contract);
+                    contract.id = appData.newId('contract');
+                    localContracts.push(contract);
                     imported.contracts++;
                 } else if (currentSection === 'payments') {
                     const typeReverse = { 'Аванс': 'advance', '1-во доп.': 'installment1', '2-ро доп.': 'installment2' };
                     const methodReverse = { 'Брой': 'cash', 'Банков превод': 'bank', 'Чек': 'check' };
                     const propertyTypeReverse = { 'Апартамент': 'apartment', 'Паркомясто': 'parking' };
-                    const contract = appData.contracts.find(c => c.owner === parts[1]);
+                    const contract = localContracts.find(c => c.owner === parts[1]);
                     if (contract) {
                         const payment = {
                             date: parts[0] || '',
@@ -1757,12 +1804,12 @@ function importFromExcel() {
                             status: parts[8] || 'paid',
                             notes: parts[9] || ''
                         };
-                        appData.addPayment(payment);
+                        localPayments.push(payment);
                         imported.payments++;
                     }
                 } else if (currentSection === 'invoices') {
                     const typeReverse = { 'Проформа': 'proforma', 'Фактура': 'invoice' };
-                    const contract = appData.contracts.find(c => c.owner === parts[2]);
+                    const contract = localContracts.find(c => c.owner === parts[2]);
                     if (contract) {
                         const invoice = {
                             number: parts[0] || '',
@@ -1772,14 +1819,22 @@ function importFromExcel() {
                             amount: parseMoney(parts[4]),
                             description: parts[5] || ''
                         };
-                        appData.addInvoice(invoice);
+                        localInvoices.push(invoice);
                         imported.invoices++;
                     }
                 }
             }
 
-            alert('✅ Импорт завършен!\nДоговори: ' + imported.contracts + '\nПлащания: ' + imported.payments + '\nФактури: ' + imported.invoices);
-            location.reload();
+            appData.importAll({
+                contracts: localContracts,
+                payments: localPayments,
+                invoices: localInvoices
+            }).then(function() {
+                alert('✅ Импорт завършен!\nДоговори: ' + imported.contracts + '\nПлащания: ' + imported.payments + '\nФактури: ' + imported.invoices);
+                location.reload();
+            }).catch(function(error) {
+                alert('❌ Грешка при импортиране: ' + error.message);
+            });
         } catch (error) {
             alert('❌ Грешка при импортиране: ' + error.message);
         }

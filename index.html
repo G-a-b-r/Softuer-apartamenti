@@ -165,7 +165,7 @@
                 <input type="file" id="importFile" style="display: none;" onchange="importData()">
 
                 <h3 style="margin-top: 30px; margin-bottom: 15px;">Опасни действия</h3>
-                <button class="danger" onclick="if(confirm('Сигурен ли си? Това е необратимо!')) { localStorage.clear(); location.reload(); }">🗑️ Изтрий всички данни</button>
+                <button class="danger" onclick="dangerResetAll()">🗑️ Изтрий всички данни</button>
             </div>
             <p id="settingsRestrictedMsg" style="display: none; text-align: center; padding: 40px 10px; color: #888;">🔒 Настройките са достъпни само за администратор.</p>
         </div>
@@ -564,7 +564,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="data.js"></script>
     <script src="auth.js"></script>
     <script src="app.js"></script>
