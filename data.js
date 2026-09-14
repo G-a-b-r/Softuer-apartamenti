@@ -34,7 +34,9 @@ async function api(path, options) {
             setTimeout(function() { openLoginModal(); }, 100);
         }
         const msg = body && body.error ? body.error : httpStatusText(res.status);
-        throw new Error(msg);
+        const err = new Error(msg);
+        err.status = res.status;
+        throw err;
     }
     return body;
 }
@@ -224,6 +226,10 @@ class AppData {
                 body: JSON.stringify(data)
             });
         } catch (err) {
+            if (err.status >= 400 && err.status < 500 && /не е намерен|не е намерено/.test(err.message)) {
+                await this.addUnit(building, data);
+                return;
+            }
             alertErr('Грешка при запис на имота', err);
             throw err;
         }
@@ -339,10 +345,15 @@ class AppData {
         });
 
         const parkingUnits = this.units['parking'] || [];
+        const contractedParkingIds = new Set(
+            this.contracts
+                .filter(c => c.parking && c.parking.unit)
+                .map(c => c.parking.unit)
+        );
         stats.parking = {
             total: parkingUnits.length,
-            sold: parkingUnits.filter(u => u.status === 'sold').length,
-            available: parkingUnits.filter(u => u.status !== 'sold').length
+            sold: contractedParkingIds.size,
+            available: parkingUnits.length - contractedParkingIds.size
         };
 
         return stats;
