@@ -221,15 +221,11 @@ class AppData {
 
     async updateUnit(building, unitId, data) {
         try {
-            await api('/units/' + encodeURIComponent(building) + '/' + encodeURIComponent(unitId), {
+            await api('/units/' + encodeURIComponent(building), {
                 method: 'PUT',
-                body: JSON.stringify(data)
+                body: JSON.stringify(Object.assign({ id: unitId }, data))
             });
         } catch (err) {
-            if (err.status >= 400 && err.status < 500 && /не е намерен|не е намерено/.test(err.message)) {
-                await this.addUnit(building, data);
-                return;
-            }
             alertErr('Грешка при запис на имота', err);
             throw err;
         }
@@ -237,8 +233,9 @@ class AppData {
 
     async deleteUnit(building, unitId) {
         try {
-            await api('/units/' + encodeURIComponent(building) + '/' + encodeURIComponent(unitId), {
-                method: 'DELETE'
+            await api('/units/' + encodeURIComponent(building), {
+                method: 'DELETE',
+                body: JSON.stringify({ id: unitId })
             });
         } catch (err) {
             alertErr('Грешка при изтриване на имота', err);
@@ -251,11 +248,11 @@ class AppData {
             Object.keys(this.units).concat(Object.keys(this._unitSync))
                 .filter(b => b === 'parking' || String(b).startsWith('building'))
         );
-        const promises = [];
         for (const building of keys) {
             const arr = this.units[building] || [];
             const syncArr = this._unitSync[building] || [];
             const syncMap = new Map(syncArr.map(u => [u.id, u]));
+            const promises = [];
             for (const u of arr) {
                 const s = syncMap.get(u.id);
                 if (!s) {
@@ -272,9 +269,11 @@ class AppData {
                     promises.push(this.deleteUnit(building, s.id));
                 }
             }
+            const results = await Promise.allSettled(promises);
+            if (results.every(r => r.status === 'fulfilled')) {
+                this._unitSync[building] = JSON.parse(JSON.stringify(arr));
+            }
         }
-        await Promise.allSettled(promises);
-        this._unitSync = JSON.parse(JSON.stringify(this.units));
     }
 
     async saveData(key, data) {
@@ -327,12 +326,14 @@ class AppData {
             }, 0);
 
             const totalUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment').length : 0;
+            const apartmentUnits = this.units[building] ? this.units[building].filter(u => u.type === 'apartment') : [];
             const contractedIds = new Set(
                 this.contracts
                     .filter(c => c.apartment && c.apartment.building === building)
                     .map(c => c.apartment.unit)
             );
-            const availableUnits = totalUnits - contractedIds.size;
+            const soldUnits = apartmentUnits.filter(u => u.status === 'sold' || contractedIds.has(u.id)).length;
+            const availableUnits = totalUnits - soldUnits;
 
             stats[building] = {
                 totalUnits: totalUnits,
@@ -350,10 +351,11 @@ class AppData {
                 .filter(c => c.parking && c.parking.unit)
                 .map(c => c.parking.unit)
         );
+        const soldParking = parkingUnits.filter(u => u.status === 'sold' || contractedParkingIds.has(u.id)).length;
         stats.parking = {
             total: parkingUnits.length,
-            sold: contractedParkingIds.size,
-            available: parkingUnits.length - contractedParkingIds.size
+            sold: soldParking,
+            available: parkingUnits.length - soldParking
         };
 
         return stats;

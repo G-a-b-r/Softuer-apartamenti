@@ -258,7 +258,9 @@ function updateUnitStatus(building, index, status, selectEl) {
     if (!requireAdmin()) return;
     if (!appData.units[building] || !appData.units[building][index]) return;
     appData.units[building][index].status = status;
-    appData.saveData('units', appData.units);
+    appData.saveData('units', appData.units).then(function() {
+        updateDashboard();
+    });
     
     if (selectEl) {
         selectEl.className = 'status-select ' + (status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available');

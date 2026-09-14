@@ -531,6 +531,62 @@ def create_unit():
     return jsonify({'ok': True}), 201
 
 
+@app.put('/api/units/<building>')
+@admin_required
+def update_unit_body(building):
+    body = request.get_json(silent=True) or {}
+    if not body.get('id'):
+        return jsonify({'error': 'ID на имота е задължително.'}), 400
+    err = validate_unit_update(building, body)
+    if err:
+        return jsonify({'error': err}), 400
+    row = Unit.query.filter_by(building=building, unit_id=body['id']).first()
+    if not row:
+        pos = Unit.query.filter_by(building=building).count()
+        row = Unit(
+            id=building + '::' + uuid.uuid4().hex[:8],
+            building=building,
+            position=pos,
+            unit_id=body['id'],
+            name=body.get('name', ''),
+            type=body.get('type', ''),
+            sqm=as_float(body.get('sqm', 0)) or 0,
+            price=as_float(body.get('price', 0)) or 0,
+            status=body.get('status', 'free'),
+            apt_type=body.get('aptType'),
+        )
+        db.session.add(row)
+    if 'name' in body:
+        row.name = body['name']
+    if 'type' in body:
+        row.type = body['type']
+    if 'sqm' in body:
+        row.sqm = as_float(body['sqm'])
+    if 'price' in body:
+        row.price = as_float(body['price'])
+    if 'status' in body:
+        row.status = body['status']
+    if 'aptType' in body:
+        row.apt_type = body['aptType']
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.delete('/api/units/<building>')
+@admin_required
+def delete_unit_body(building):
+    body = request.get_json(silent=True) or {}
+    target_id = body.get('id')
+    if not target_id:
+        return jsonify({'error': 'ID на имота е задължително.'}), 400
+    row = Unit.query.filter_by(building=building, unit_id=target_id).first()
+    if not row:
+        return jsonify({'ok': True})
+    db.session.delete(row)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @app.put('/api/units/<building>/<unit_id>')
 @admin_required
 def update_unit(building, unit_id):
@@ -538,7 +594,10 @@ def update_unit(building, unit_id):
     err = validate_unit_update(building, body)
     if err:
         return jsonify({'error': err}), 400
-    row = Unit.query.filter_by(building=building, unit_id=unit_id).first()
+    target_id = body.get('id') or unit_id
+    row = Unit.query.filter_by(building=building, unit_id=target_id).first()
+    if not row and target_id != unit_id:
+        row = Unit.query.filter_by(building=building, unit_id=unit_id).first()
     if not row:
         return jsonify({'error': 'Имотът не е намерен.'}), 404
     if 'id' in body:
@@ -562,7 +621,11 @@ def update_unit(building, unit_id):
 @app.delete('/api/units/<building>/<unit_id>')
 @admin_required
 def delete_unit(building, unit_id):
-    row = Unit.query.filter_by(building=building, unit_id=unit_id).first()
+    body = request.get_json(silent=True) or {}
+    target_id = body.get('id') or unit_id
+    row = Unit.query.filter_by(building=building, unit_id=target_id).first()
+    if not row and target_id != unit_id:
+        row = Unit.query.filter_by(building=building, unit_id=unit_id).first()
     if not row:
         return jsonify({'error': 'Имотът не е намерен.'}), 404
     db.session.delete(row)
