@@ -1050,6 +1050,92 @@ table {
     font-weight: 500;
 }
 
+/* Бележки по договора — винаги видими */
+.detail-notes {
+    margin-bottom: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: #fffbeb;
+    border: 1px solid #f7d774;
+    border-left: 5px solid #f0a500;
+    border-radius: 6px;
+}
+
+.detail-notes-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #8a6100;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.detail-notes-box {
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #fff;
+    border: 1px dashed #f0c14b;
+    border-radius: 4px;
+    padding: 0.6rem 0.75rem;
+    min-height: 44px;
+}
+
+.detail-notes-box.is-empty {
+    background: transparent;
+    border-style: dashed;
+}
+
+.detail-notes-empty {
+    color: #a08c53;
+    font-style: italic;
+}
+
+/* Колона с бележки в списъка с договори */
+.notes-cell {
+    font-size: 0.85rem;
+    color: #555;
+    vertical-align: top;
+}
+
+.number-cell {
+    font-weight: 700;
+    color: #667eea;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.detail-empty {
+    color: #bbb;
+    font-style: italic;
+    font-weight: 400;
+}
+
+@media (min-width: 769px) {
+    .notes-cell {
+        max-width: 240px;
+        min-width: 140px;
+    }
+
+    .notes-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: bottom;
+    }
+}
+
+.notes-badge {
+    margin-right: 4px;
+}
+
+.notes-none {
+    color: #bbb;
+    font-style: italic;
+}
+
 .progress-bar-container {
     margin-top: 1rem;
     background: #e9ecef;

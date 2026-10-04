@@ -673,21 +673,29 @@ function renderContracts() {
         
         if (!unitInfo) unitInfo = 'Без имот';
         if (!building) building = 'Н/О';
+
+        const numberText = String(contract.number || '').trim();
+        const noteText = String(contract.notes || '').trim();
+        const noteCell = noteText
+            ? '<span class="notes-badge">📝</span><span class="notes-text">' + escapeHtml(noteText) + '</span>'
+            : '<span class="notes-none">няма</span>';
         
         html += `
             <tr class="contract-row" onclick="openContractDetail('${contract.id}')" style="cursor: pointer;">
                 <td data-label="Сграда">${building}</td>
                 <td data-label="Имот">${unitInfo}</td>
-                <td data-label="Собственик">${contract.owner}</td>
+                <td data-label="Собственик">${escapeHtml(contract.owner)}</td>
+                <td data-label="Номер на договор" class="number-cell">${numberText ? escapeHtml(numberText) : '<span class="notes-none">няма</span>'}</td>
                 <td data-label="Стойност">${formatPrice(parseMoney(contract.totalValue || 0))}</td>
                 <td data-label="Аванс">${contract.advance ? contract.advance.percent : 0}% (${new Date(contract.advance ? contract.advance.date : new Date()).toLocaleDateString('bg-BG')})</td>
                 <td data-label="Доплащания">${(() => { const insts = getAllInstallments(contract).filter(s => s.type !== 'advance' && s.percent > 0); return insts.map(s => s.percent + '%').join(' + '); })()}</td>
+                <td data-label="Бележки" class="notes-cell" title="${escapeHtml(noteText)}">${noteCell}</td>
                 ${isAdmin() ? '<td data-label="Действия"><button class="secondary small" onclick="event.stopPropagation(); editContract(\'' + contract.id + '\')">✏️</button> <button class="danger small" onclick="event.stopPropagation(); if(confirm(\'Сигурен ли си?\')) deleteContractItem(\'' + contract.id + '\')">🗑️</button></td>' : ''}
             </tr>
         `;
     });
 
-    document.getElementById('contractsTable').innerHTML = html || '<tr><td colspan="7" style="text-align: center; padding: 20px;">Няма договори. Създай нов договор!</td></tr>';
+    document.getElementById('contractsTable').innerHTML = html || '<tr><td colspan="9" style="text-align: center; padding: 20px;">Няма договори. Създай нов договор!</td></tr>';
 }
 
 function openContractDetail(id) {
@@ -766,8 +774,20 @@ function openContractDetail(id) {
 
     const progressPercent = totalValue > 0 ? Math.round((totalPaid / totalValue) * 100) : 0;
 
-    document.getElementById('contractDetailTitle').textContent = 'Договор — ' + contract.owner;
+    const contractNotesText = String(contract.notes || '').trim();
+    const contractNotesHtml = contractNotesText
+        ? escapeHtml(contractNotesText).replace(/\r?\n/g, '<br>')
+        : '<span class="detail-notes-empty">Няма добавени бележки към този договор.</span>';
+
+    const contractNumberText = String(contract.number || '').trim();
+
+    document.getElementById('contractDetailTitle').textContent = 'Договор — ' + contract.owner + (contractNumberText ? ' (№ ' + contractNumberText + ')' : '');
     document.getElementById('contractDetailContent').innerHTML = `
+        <div class="detail-notes">
+            <div class="detail-notes-title">📝 Бележки по договора</div>
+            <div class="detail-notes-box${contractNotesText ? '' : ' is-empty'}">${contractNotesHtml}</div>
+        </div>
+
         <div class="detail-section">
             <h4>Информация за имота</h4>
             <div class="detail-grid">
@@ -781,13 +801,13 @@ function openContractDetail(id) {
         </div>
 
         <div class="detail-section">
-            <h4>Данни за собственика</h4>
+            <h4>Данни по договора</h4>
             <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">Име:</span><span class="detail-value">${contract.owner || ''}</span></div>
-                <div class="detail-item"><span class="detail-label">Телефон:</span><span class="detail-value">${contract.phone || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Номер на договор:</span><span class="detail-value">${contractNumberText ? escapeHtml(contractNumberText) : '<span class="detail-empty">не е записан</span>'}</span></div>
                 <div class="detail-item"><span class="detail-label">Дата на договор:</span><span class="detail-value">${contract.date ? new Date(contract.date).toLocaleDateString('bg-BG') : '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Собственик:</span><span class="detail-value">${escapeHtml(contract.owner || '') || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Телефон/Имейл:</span><span class="detail-value">${escapeHtml(contract.phone || '-')}</span></div>
             </div>
-            ${contract.notes ? '<div style="margin-top: 10px;"><span class="detail-label">Бележки:</span><div style="margin-top: 5px; padding: 8px; background: #f8f9fa; border-radius: 4px;">' + contract.notes + '</div></div>' : ''}
         </div>
 
         <div class="detail-section">
@@ -1189,13 +1209,26 @@ function openPaymentDetail(contractId, paymentType) {
 
     const progressPercent = totalValue > 0 ? Math.round((totalPaid / totalValue) * 100) : 0;
 
-    document.getElementById('paymentDetailTitle').textContent = typeNames[paymentType] + ' — ' + contract.owner;
+    const contractNotesText = String(contract.notes || '').trim();
+    const contractNotesHtml = contractNotesText
+        ? escapeHtml(contractNotesText).replace(/\r?\n/g, '<br>')
+        : '<span class="detail-notes-empty">Няма добавени бележки към този договор.</span>';
+
+    const contractNumberText = String(contract.number || '').trim();
+
+    document.getElementById('paymentDetailTitle').textContent = typeNames[paymentType] + ' — ' + contract.owner + (contractNumberText ? ' (№ ' + contractNumberText + ')' : '');
     document.getElementById('paymentDetailContent').innerHTML = `
+        <div class="detail-notes">
+            <div class="detail-notes-title">📝 Бележки по договора</div>
+            <div class="detail-notes-box${contractNotesText ? '' : ' is-empty'}">${contractNotesHtml}</div>
+        </div>
+
         <div class="detail-section">
             <h4>Информация за договора</h4>
             <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">Собственик:</span><span class="detail-value">${contract.owner || ''}</span></div>
-                <div class="detail-item"><span class="detail-label">Телефон:</span><span class="detail-value">${contract.phone || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Номер на договор:</span><span class="detail-value">${contractNumberText ? escapeHtml(contractNumberText) : '<span class="detail-empty">не е записан</span>'}</span></div>
+                <div class="detail-item"><span class="detail-label">Собственик:</span><span class="detail-value">${escapeHtml(contract.owner || '') || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Телефон:</span><span class="detail-value">${escapeHtml(contract.phone || '-')}</span></div>
                 <div class="detail-item"><span class="detail-label">Дата на договор:</span><span class="detail-value">${contract.date ? new Date(contract.date).toLocaleDateString('bg-BG') : '-'}</span></div>
             </div>
         </div>
