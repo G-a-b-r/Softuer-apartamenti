@@ -128,12 +128,81 @@ function updateDashboard() {
     document.getElementById('totalRemaining').textContent = formatPrice(remaining);
 }
 
+let unitViewScope = null;
+let unitStatusFilter = 'all';
+
+function getUnitStatusCounts(units) {
+    const counts = { all: units.length, free: 0, reserved: 0, sold: 0 };
+    units.forEach(unit => {
+        const s = unit.status || 'free';
+        if (counts[s] !== undefined) counts[s]++;
+    });
+    return counts;
+}
+
+function renderUnitFilter(counts) {
+    const tabs = [
+        { key: 'all', label: 'Всички' },
+        { key: 'free', label: 'Свободни' },
+        { key: 'reserved', label: 'Резервирани' },
+        { key: 'sold', label: 'Продадени' }
+    ];
+
+    document.getElementById('apartmentsFilter').innerHTML =
+        '<span class="unit-filter-label">Филтър по статус:</span>' +
+        tabs.map(t => '<button type="button" class="unit-filter-btn' + (unitStatusFilter === t.key ? ' active' : '') + '" onclick="filterUnits(\'' + t.key + '\')">' + t.label + ' (' + counts[t.key] + ')</button>').join('');
+}
+
+function filterUnits(status) {
+    unitStatusFilter = status;
+    renderUnitView();
+}
+
+function renderUnitView() {
+    if (!unitViewScope) return;
+    if (unitViewScope.type === 'parking') {
+        renderParkingUnits();
+    } else {
+        renderBuildingUnits(unitViewScope.key);
+    }
+}
+
+function filterUnitsByStatus(units) {
+    return unitStatusFilter === 'all' ? units : units.filter(u => (u.status || 'free') === unitStatusFilter);
+}
+
+function refreshUnitsView(building) {
+    const sameView = unitViewScope && (
+        (building === 'parking' && unitViewScope.type === 'parking') ||
+        (building !== 'parking' && unitViewScope.type === 'apartment' && unitViewScope.key === building)
+    );
+
+    if (sameView) {
+        renderUnitView();
+    } else if (building === 'parking') {
+        openParkingDetail();
+    } else {
+        openBuildingDetail(building);
+    }
+}
+
 function openBuildingDetail(building) {
     document.getElementById('apartmentsModalTitle').textContent = buildingNames[building];
-    const units = appData.units[building] ? appData.units[building].filter(u => u.type === 'apartment') : [];
-    
+    unitViewScope = { type: 'apartment', key: building };
+    unitStatusFilter = 'all';
+    renderBuildingUnits(building);
+    document.getElementById('apartmentsModal').classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function renderBuildingUnits(building) {
+    const units = (appData.units[building] || []).filter(u => u.type === 'apartment');
+    const visibleUnits = filterUnitsByStatus(units);
+
+    renderUnitFilter(getUnitStatusCounts(units));
+
     let deleteOptions = '<option value="">Избери апартамент...</option>';
-    units.forEach((unit, index) => {
+    units.forEach(unit => {
         const originalIndex = appData.units[building].indexOf(unit);
         deleteOptions += '<option value="' + originalIndex + '">' + unit.name + ' (' + unit.id + ')</option>';
     });
@@ -162,7 +231,11 @@ function openBuildingDetail(building) {
             <tbody>
     `;
 
-    units.forEach((unit, index) => {
+    if (!visibleUnits.length) {
+        html += '<tr><td colspan="7" style="text-align:center; padding:20px; color:#999;">Няма апартаменти с този статус.</td></tr>';
+    }
+
+    visibleUnits.forEach(unit => {
         const originalIndex = appData.units[building].indexOf(unit);
         const status = unit.status || 'free';
         const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
@@ -190,13 +263,22 @@ function openBuildingDetail(building) {
 
     html += '</tbody></table>';
     document.getElementById('apartmentsList').innerHTML = html;
-    document.getElementById('apartmentsModal').classList.add('active');
-    document.body.classList.add('modal-open');
 }
 
 function openParkingDetail() {
     document.getElementById('apartmentsModalTitle').textContent = 'Паркоместа';
+    unitViewScope = { type: 'parking', key: 'parking' };
+    unitStatusFilter = 'all';
+    renderParkingUnits();
+    document.getElementById('apartmentsModal').classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function renderParkingUnits() {
     const parkingUnits = appData.units['parking'] || [];
+    const visibleUnits = filterUnitsByStatus(parkingUnits);
+
+    renderUnitFilter(getUnitStatusCounts(parkingUnits));
 
     let deleteOptions = '<option value="">Избери паркомясто...</option>';
     parkingUnits.forEach((unit, index) => {
@@ -225,7 +307,12 @@ function openParkingDetail() {
             <tbody>
     `;
 
-    parkingUnits.forEach((unit, index) => {
+    if (!visibleUnits.length) {
+        html += '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">Няма паркоместа с този статус.</td></tr>';
+    }
+
+    visibleUnits.forEach(unit => {
+        const index = appData.units['parking'].indexOf(unit);
         const status = unit.status || 'free';
         const statusClass = status === 'sold' ? 'status-sold' : status === 'reserved' ? 'status-reserved' : 'status-available';
         const statusLabel = status === 'sold' ? 'Продаден' : status === 'reserved' ? 'Резервиран' : 'Свободен';
@@ -250,8 +337,6 @@ function openParkingDetail() {
 
     html += '</tbody></table>';
     document.getElementById('apartmentsList').innerHTML = html;
-    document.getElementById('apartmentsModal').classList.add('active');
-    document.body.classList.add('modal-open');
 }
 
 function updateUnitStatus(building, index, status, selectEl) {
@@ -260,6 +345,7 @@ function updateUnitStatus(building, index, status, selectEl) {
     appData.units[building][index].status = status;
     appData.saveData('units', appData.units).then(function() {
         updateDashboard();
+        refreshUnitsView(building);
     });
     
     if (selectEl) {
@@ -280,7 +366,7 @@ function editPrice(building, index) {
     }
     unit.price = num;
     appData.saveData('units', appData.units);
-    openBuildingDetail(building);
+    refreshUnitsView(building);
 }
 
 function closeApartmentsModal() {
@@ -305,11 +391,7 @@ function deleteSelectedUnit(building) {
     appData.units[building].splice(index, 1);
     appData.saveData('units', appData.units);
 
-    if (building === 'parking') {
-        openParkingDetail();
-    } else {
-        openBuildingDetail(building);
-    }
+    refreshUnitsView(building);
 }
 
 let currentAddUnitBuilding = '';
@@ -369,11 +451,7 @@ async function saveNewUnit(event) {
         await appData.saveData('units', appData.units);
         closeAddUnitModal();
 
-        if (type === 'parking') {
-            openParkingDetail();
-        } else {
-            openBuildingDetail(building);
-        }
+        refreshUnitsView(building);
     } catch (e) {
         appData.units[building] = (appData.units[building] || []).filter(u => u.id !== newUnit.id);
         if (appData._unitSync[building]) {
@@ -397,16 +475,30 @@ function openContractModal() {
     editingContractId = null;
     document.getElementById('contractModal').classList.add('active');
     document.querySelector('#contractModal .modal-header span').textContent = 'Нов договор';
-    document.getElementById('contractForm').reset();
+    resetContractForm();
     document.getElementById('contractDate').valueAsDate = new Date();
     document.getElementById('advanceDate').valueAsDate = new Date();
     document.getElementById('installment1Date').valueAsDate = new Date(Date.now() + 30*24*60*60*1000);
     document.getElementById('installment2Date').valueAsDate = new Date(Date.now() + 60*24*60*60*1000);
+    updateInstallmentAmounts();
+}
+
+function resetContractForm() {
+    const form = document.getElementById('contractForm');
+    if (form) form.reset();
+
+    ['contractOwner', 'contractPhone', 'contractNumber', 'apartmentValue', 'parkingValue', 'contractNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    document.getElementById('apartmentBuilding').value = '';
+    document.getElementById('apartmentUnit').innerHTML = '<option value="">Изберете апартамент</option>';
+    document.getElementById('parkingUnit').innerHTML = '<option value="">Без паркомясто</option>';
     document.getElementById('extraInstallmentsContainer').innerHTML = '';
     extraInstallmentCounter = 0;
     populateApartmentsSelect();
     populateParkingSelect();
-    updateInstallmentAmounts();
 }
 
 function closeContractModal() {
@@ -863,11 +955,21 @@ function openPaymentModal() {
     if (!requireAdmin()) return;
     editingPaymentId = null;
     document.querySelector('#paymentModal .modal-header span').textContent = 'Ново плащане';
+    resetPaymentForm();
     document.getElementById('paymentModal').classList.add('active');
-    document.getElementById('paymentPropertyType').value = '';
-    document.getElementById('paymentUnitInfo').value = '';
-    populatePaymentSelects();
     document.getElementById('paymentDate').valueAsDate = new Date();
+}
+
+function resetPaymentForm() {
+    const form = document.getElementById('paymentForm');
+    if (form) form.reset();
+
+    ['paymentUnitInfo', 'paymentAmount', 'paymentType', 'paymentPropertyType', 'paymentMethod', 'paymentInvoiceNumber', 'paymentInvoiceDate', 'paymentNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    populatePaymentSelects();
 }
 
 function editPayment(id) {
@@ -1544,7 +1646,7 @@ function editContract(id) {
     editingContractId = id;
     document.querySelector('#contractModal .modal-header span').textContent = 'Редактиране на договор';
     document.getElementById('contractModal').classList.add('active');
-    document.getElementById('contractForm').reset();
+    resetContractForm();
 
     document.getElementById('contractOwner').value = contract.owner || '';
     document.getElementById('contractPhone').value = contract.phone || '';
@@ -1556,6 +1658,7 @@ function editContract(id) {
     document.getElementById('apartmentUnit').value = contract.apartment ? contract.apartment.unit : '';
     document.getElementById('apartmentValue').value = contract.apartment ? formatPrice(contract.apartment.value) : '';
 
+    populateParkingSelect();
     document.getElementById('parkingUnit').value = contract.parking ? contract.parking.unit : '';
     document.getElementById('parkingValue').value = contract.parking ? formatPrice(contract.parking.value) : '';
 

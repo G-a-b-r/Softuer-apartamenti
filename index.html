@@ -361,7 +361,7 @@
                 <span>Записване на плащане</span>
                 <button class="close-btn" onclick="closePaymentModal()">✕</button>
             </div>
-            <form onsubmit="savePayment(event)">
+            <form id="paymentForm" onsubmit="savePayment(event)">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Договор:</label>
@@ -450,6 +450,7 @@
                 <div id="apartmentsModalActions" class="modal-header-actions"></div>
                 <button class="close-btn" onclick="closeApartmentsModal()">✕</button>
             </div>
+            <div id="apartmentsFilter" class="unit-filter"></div>
             <div id="apartmentsList" class="table-container"></div>
         </div>
     </div>
