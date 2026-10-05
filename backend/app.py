@@ -6,6 +6,7 @@ from functools import wraps
 
 from flask import Flask, abort, g, jsonify, request, send_from_directory
 from flask_cors import CORS
+from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import db, DATABASE_URL, BASE_DIR
@@ -637,7 +638,12 @@ def delete_unit(building, unit_id):
 
 @app.get('/api/health')
 def health():
-    return jsonify({'ok': True})
+    try:
+        db.session.execute(text('SELECT 1'))
+        return jsonify({'ok': True, 'db': 'ok', 'database': _db_kind()})
+    except Exception as exc:
+        app.logger.exception('Health check failed')
+        return jsonify({'ok': False, 'db': 'error', 'error': str(exc), 'database': _db_kind()}), 503
 
 
 @app.get('/api/bootstrap')
@@ -813,22 +819,74 @@ def reset():
 
 # ---------------------------------------------------------------- frontend
 
+MISSING_BUNDLE_HTML = """<!doctype html>
+<html lang="bg"><head><meta charset="utf-8"><title>Липсват файлове на сървъра</title>
+<style>body{font-family:system-ui,sans-serif;max-width:640px;margin:60px auto;padding:0 20px;color:#333}
+code{background:#f4f4f4;padding:2px 6px;border-radius:4px}</style></head>
+<body>
+<h2>Сървърът не може да намери файловете на приложението</h2>
+<p>Файлът <code>%(file)s</code> липсва в пакета на функцията. Това означава, че в
+<code>vercel.json</code> липсва <code>includeFiles</code> за статичните файлове.</p>
+<p>Добави следните файлове и направи нов деплой:</p>
+<p><code>index.html, style.css, app.js, auth.js, data.js, main.js, config.js</code></p>
+</body></html>
+"""
+
+
+def serve_frontend_file(filename):
+    path = os.path.join(FRONTEND_DIR, filename)
+    if not os.path.isfile(path):
+        app.logger.error('Frontend file missing from bundle: %s (FRONTEND_DIR=%s)', path, FRONTEND_DIR)
+        return MISSING_BUNDLE_HTML % {'file': filename}, 500, {'Content-Type': 'text/html; charset=utf-8'}
+    return send_from_directory(FRONTEND_DIR, filename)
+
+
 @app.route('/')
 def index():
-    return send_from_directory(FRONTEND_DIR, 'index.html')
+    return serve_frontend_file('index.html')
 
 
 @app.route('/<path:filename>')
 def frontend_file(filename):
     if filename not in ALLOWED_STATIC:
         abort(404)
-    return send_from_directory(FRONTEND_DIR, filename)
+    return serve_frontend_file(filename)
+
+
+# ---------------------------------------------------------------- errors
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(exc):
+    from werkzeug.exceptions import HTTPException
+
+    if isinstance(exc, HTTPException):
+        return exc
+
+    app.logger.exception('Unhandled error on %s %s', request.method, request.path)
+    message = 'Вътрешна грешка на сървъра. Провери логовете на Vercel (функция api/index.py).'
+
+    if request.path.startswith('/api/'):
+        return jsonify({'error': message}), 500
+
+    return (
+        '<!doctype html><html lang="bg"><head><meta charset="utf-8">'
+        '<title>Грешка на сървъра</title></head><body>'
+        '<h2>Вътрешна грешка на сървъра</h2><p>' + message + '</p></body></html>',
+        500,
+        {'Content-Type': 'text/html; charset=utf-8'},
+    )
 
 
 # ---------------------------------------------------------------- startup
 
 _schema_lock = threading.Lock()
 _schema_ready = False
+
+STATIC_ENDPOINTS = {'index', 'frontend_file', 'health'}
+
+
+def _db_kind():
+    return 'postgres' if DATABASE_URL.startswith('postgres') else 'sqlite'
 
 
 def ensure_schema():
@@ -845,11 +903,14 @@ def ensure_schema():
 
 @app.before_request
 def ensure_schema_before_request():
+    if request.endpoint in STATIC_ENDPOINTS:
+        return None
     try:
         ensure_schema()
-    except Exception as exc:
+    except Exception:
+        app.logger.exception('Database init failed (%s)', _db_kind())
         return jsonify({
-            'error': 'Базата данни не е налична. Провери дали DATABASE_URL е зададен в настройките и дали връзката е активна.'
+            'error': 'Базата данни не е налична. Провери дали DATABASE_URL е зададен в настройките на Vercel и дали връзката е активна.'
         }), 503
     return None
 
