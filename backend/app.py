@@ -40,6 +40,21 @@ def current_user():
     return Profile.query.filter_by(id=sess.user_id).first()
 
 
+def find_profile_by_username(username):
+    wanted = (username or '').strip().lower()
+    if not wanted:
+        return None
+
+    exact = Profile.query.filter(Profile.username == wanted).first()
+    if exact:
+        return exact
+
+    for profile in Profile.query.all():
+        if (profile.username or '').strip().lower() == wanted:
+            return profile
+    return None
+
+
 def create_session(profile):
     token = uuid.uuid4().hex
     db.session.add(Session(id=token, user_id=profile.id, created=datetime.now(timezone.utc).isoformat()))
@@ -672,7 +687,7 @@ def register():
     if len(password) < 4:
         return jsonify({'error': 'Паролата трябва да е поне 4 знака.'}), 400
 
-    existing = Profile.query.filter(db.func.lower(Profile.username) == username.lower()).first()
+    existing = find_profile_by_username(username)
     if existing:
         return jsonify({'error': 'Това потребителско име вече съществува!'}), 400
 
@@ -703,7 +718,7 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Моля, попълни потребителско име и парола!'}), 400
 
-    profile = Profile.query.filter(db.func.lower(Profile.username) == username.lower()).first()
+    profile = find_profile_by_username(username)
     if not profile or not check_password_hash(profile.password_hash, password):
         return jsonify({'error': 'Грешни потребителско име или парола!'}), 401
 
