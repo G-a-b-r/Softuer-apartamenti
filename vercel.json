@@ -4,15 +4,7 @@
     "api/index.py": {
       "maxDuration": 60,
       "memory": 1024,
-      "includeFiles": [
-        "index.html",
-        "style.css",
-        "app.js",
-        "auth.js",
-        "data.js",
-        "main.js",
-        "config.js"
-      ]
+      "includeFiles": "index.html,style.css,app.js,auth.js,data.js,main.js,config.js"
     }
   }
 }
