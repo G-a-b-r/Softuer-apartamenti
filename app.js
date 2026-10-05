@@ -727,6 +727,8 @@ function renderContracts() {
     const filterBuilding = document.getElementById('contractFilterBuilding') ? document.getElementById('contractFilterBuilding').value : '';
     const filterParking = document.getElementById('contractFilterParking') ? document.getElementById('contractFilterParking').value : '';
     const filterOwner = document.getElementById('contractFilterOwner') ? document.getElementById('contractFilterOwner').value : '';
+    const filterNumberInput = document.getElementById('contractFilterNumber');
+    const filterNumber = filterNumberInput ? filterNumberInput.value.trim().toLowerCase() : '';
 
     let contractsToShow = appData.contracts.slice();
 
@@ -742,6 +744,12 @@ function renderContracts() {
 
     if (filterOwner) {
         contractsToShow = contractsToShow.filter(c => c.owner === filterOwner);
+    }
+
+    if (filterNumber) {
+        contractsToShow = contractsToShow.filter(c =>
+            (c.number || '').toLowerCase().includes(filterNumber)
+        );
     }
 
     contractsToShow.forEach(contract => {

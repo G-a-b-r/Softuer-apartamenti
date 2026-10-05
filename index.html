@@ -76,6 +76,10 @@
                     </select>
                 </div>
                 <div>
+                    <label>Филтър по номер на договор:</label>
+                    <input type="text" id="contractFilterNumber" placeholder="Напр. Д-2026/15" oninput="filterContracts()">
+                </div>
+                <div>
                     <label>Филтър по собственик:</label>
                     <select id="contractFilterOwner" onchange="filterContracts()">
                         <option value="">Всички собственици</option>
