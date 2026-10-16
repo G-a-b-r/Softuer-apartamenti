@@ -601,7 +601,9 @@ async function saveContract(event) {
     
     if (hasApartment) {
         const selectedUnit = (appData.units[building] || []).find(u => u.id === unit);
-        if (selectedUnit && selectedUnit.status === 'sold') {
+        const editingContract = editingContractId ? appData.contracts.find(c => c.id === editingContractId) : null;
+        const isEditingOwnApartment = !!(editingContract && editingContract.apartment && editingContract.apartment.building === building && editingContract.apartment.unit === unit);
+        if (selectedUnit && selectedUnit.status === 'sold' && !isEditingOwnApartment) {
             alert('Грешка: Апартаментът "' + selectedUnit.name + '" е продаден и не може да бъде добавен нов договор!');
             return;
         }
@@ -614,7 +616,9 @@ async function saveContract(event) {
     
     if (hasParking) {
         const selectedUnit = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
-        if (selectedUnit && selectedUnit.status === 'sold') {
+        const editingContract = editingContractId ? appData.contracts.find(c => c.id === editingContractId) : null;
+        const isEditingOwnParking = !!(editingContract && editingContract.parking && editingContract.parking.unit === parkingUnit);
+        if (selectedUnit && selectedUnit.status === 'sold' && !isEditingOwnParking) {
             alert('Грешка: Паркомястото "' + selectedUnit.name + '" е продадено и не може да бъде добавен нов договор!');
             return;
         }
