@@ -107,8 +107,8 @@ def validate_contract(c):
         return 'Името на собственика е твърде дълго.'
     if as_float(c.get('totalValue')) is None:
         return 'Невалидна обща стойност.'
-    if as_float(c.get('totalValue')) <= 0:
-        return 'Общата стойност трябва да е положително число.'
+    if as_float(c.get('totalValue')) < 0:
+        return 'Общата стойност не може да е отрицателно число.'
 
     ap = c.get('apartment') or {}
     pk = c.get('parking') or {}
@@ -120,14 +120,14 @@ def validate_contract(c):
         if not ap.get('unit'):
             return 'Липсва номер на апартамента.'
         av = as_float(ap.get('value'))
-        if av is None or av <= 0:
-            return 'Стойността на апартамента трябва да е положително число.'
+        if av is None or av < 0:
+            return 'Стойността на апартамента не може да е отрицателно число.'
     if pk:
         if not pk.get('unit'):
             return 'Липсва номер на паркомястото.'
         pv = as_float(pk.get('value'))
-        if pv is None or pv <= 0:
-            return 'Стойността на паркомястото трябва да е положително число.'
+        if pv is None or pv < 0:
+            return 'Стойността на паркомястото не може да е отрицателно число.'
 
     for key in ('advance', 'installment1', 'installment2'):
         item = c.get(key) or {}

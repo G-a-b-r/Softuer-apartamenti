@@ -584,13 +584,13 @@ async function saveContract(event) {
     const hasApartment = !!building;
     const hasParking = !!parkingUnit;
     
-    if (hasApartment && (!apartmentValue || apartmentValue <= 0)) {
-        alert('Моля, въведи стойност на апартамента!');
+    if (hasApartment && apartmentValue < 0) {
+        alert('Стойността на апартамента не може да е отрицателна!');
         return;
     }
     
-    if (hasParking && (!parkingValue || parkingValue <= 0)) {
-        alert('Моля, въведи стойност на паркомястото!');
+    if (hasParking && parkingValue < 0) {
+        alert('Стойността на паркомястото не може да е отрицателна!');
         return;
     }
     
@@ -630,11 +630,6 @@ async function saveContract(event) {
     }
     
     const totalValue = apartmentValue + parkingValue;
-    
-    if (totalValue <= 0) {
-        alert('Моля, въведи стойност на имота!');
-        return;
-    }
 
     const data = {
         owner: document.getElementById('contractOwner').value,
@@ -1809,7 +1804,7 @@ async function exportToExcel() {
         row[3] = contract.owner || '';
         row[4] = contract.phone || '';
         row[5] = contract.date || '';
-        row[6] = totalValue || '';
+        row[6] = totalValue;
         const insts = getAllInstallments(contract);
         for (let i = 0; i < 6; i++) {
             const sch = insts[i];
