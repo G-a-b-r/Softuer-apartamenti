@@ -25,6 +25,10 @@ function formatPrice(price) {
     return parts.join('.');
 }
 
+function formatUnitPrice(price) {
+    return (price === 0 || price) ? formatPrice(price) : '-';
+}
+
 function autoDecimals(el) {
     let val = el.value;
     if (val && !val.includes('.') && !val.includes(',')) {
@@ -255,7 +259,7 @@ function renderBuildingUnits(building) {
                 <td data-label="Апартамент">${unit.name}</td>
                 <td data-label="Вид">${unit.aptType || '-'}</td>
                 <td data-label="Квадратура">${unit.sqm ? unit.sqm.toFixed(2) : '-'}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'' + building + '\', ' + originalIndex + ')" title="Редактирай цена">✏️</button>' : ''}</td>
+                <td data-label="Цена">${formatUnitPrice(unit.price)}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'' + building + '\', ' + originalIndex + ')" title="Редактирай цена">✏️</button>' : ''}</td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -329,7 +333,7 @@ function renderParkingUnits() {
                 <td data-label="" style="text-align:center"><input type="checkbox" onclick="toggleRowHighlight(this.closest('tr'))"></td>
                 <td data-label="Идентификатор">${unit.id}</td>
                 <td data-label="Име">${unit.name}</td>
-                <td data-label="Цена">${unit.price ? formatPrice(unit.price) : '-'}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'parking\', ' + index + ')" title="Редактирай цена">✏️</button>' : ''}</td>
+                <td data-label="Цена">${formatUnitPrice(unit.price)}${isAdmin() ? '&nbsp;&nbsp;<button class="small secondary" onclick="editPrice(\'parking\', ' + index + ')" title="Редактирай цена">✏️</button>' : ''}</td>
                 <td data-label="Статус">${statusOptions}</td>
             </tr>
         `;
@@ -360,8 +364,8 @@ function editPrice(building, index) {
     const newPrice = prompt('Нова цена за ' + unit.name + ' (в €):', unit.price);
     if (newPrice === null) return;
     const num = parseMoney(newPrice);
-    if (isNaN(num) || num <= 0) {
-        alert('Моля, въведете валидна цена!');
+    if (isNaN(num) || num < 0) {
+        alert('Моля, въведете валидна цена (0 или повече)!');
         return;
     }
     unit.price = num;
@@ -530,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const unitId = this.value;
             if (building && unitId) {
                 const unit = (appData.units[building] || []).find(u => u.id === unitId);
-                if (unit && unit.price) {
+                if (unit && (unit.price === 0 || unit.price)) {
                     document.getElementById('apartmentValue').value = formatPrice(unit.price);
                     updateInstallmentAmounts();
                 }
@@ -548,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const unitId = this.value;
             if (unitId) {
                 const unit = (appData.units['parking'] || []).find(u => u.id === unitId);
-                if (unit && unit.price) {
+                if (unit && (unit.price === 0 || unit.price)) {
                     document.getElementById('parkingValue').value = formatPrice(unit.price);
                     updateInstallmentAmounts();
                 }
@@ -667,24 +671,32 @@ async function saveContract(event) {
             await appData.updateContract(editingContractId, data);
         } else {
             await appData.addContract(data);
-            if (hasApartment) {
-                const unitObj = (appData.units[building] || []).find(u => u.id === unit);
-                if (unitObj) {
-                    unitObj.status = 'sold';
-                }
+        }
+        let unitsChanged = false;
+        if (hasApartment) {
+            const unitObj = (appData.units[building] || []).find(u => u.id === unit);
+            if (unitObj) {
+                unitObj.status = 'sold';
+                unitObj.price = apartmentValue;
+                unitsChanged = true;
             }
-            if (hasParking) {
-                const unitObj = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
-                if (unitObj) {
-                    unitObj.status = 'sold';
-                }
+        }
+        if (hasParking) {
+            const unitObj = (appData.units['parking'] || []).find(u => u.id === parkingUnit);
+            if (unitObj) {
+                unitObj.status = 'sold';
+                unitObj.price = parkingValue;
+                unitsChanged = true;
             }
+        }
+        if (unitsChanged) {
             await appData.saveData('units', appData.units);
         }
         closeContractModal();
         renderContracts();
         populateContractSelects();
         populateContractFilters();
+        updateDashboard();
         alert('✅ Договорът е запазен успешно!');
     } catch (e) {
     } finally {
@@ -1825,7 +1837,7 @@ async function exportToExcel() {
                 '', '', '', '', '', '',
                 '', '', '', '',
                 '', '',
-                unit.id || '', unit.aptType || unit.type || '', unit.sqm || '', unit.price || '',
+                unit.id || '', unit.aptType || unit.type || '', unit.sqm || '', unit.price === 0 ? 0 : (unit.price || ''),
                 unit.status || 'свободен', ''
             ]);
         });
@@ -1840,7 +1852,7 @@ async function exportToExcel() {
                 '', '', '', '', '', '',
                 '', '', '', '',
                 '', '',
-                unit.id || '', '', '', unit.price || '',
+                unit.id || '', '', '', unit.price === 0 ? 0 : (unit.price || ''),
                 unit.status || 'свободен', ''
             ]);
         });
